@@ -1,9 +1,0 @@
-A Syncthing a zárt forrású szinkronizáló és felhő szolgáltatásokat egy nyílt, megbízható és decentralizált szoftverrel váltja fel. A te adatod csak a tiéd és te szabod meg, hogy hol tárolod, kivel osztod meg, és hogyan továbbítod az interneten.
-
-Weboldal: https://syncthing.net/
-
-Forráskód: https://github.com/syncthing/syncthing-android
-
-Fórum: https://forum.syncthing.net/
-
-Hibajelentés: https://github.com/syncthing/syncthing-android/issues

@@ -14,26 +14,6 @@ BUILD_TARGETS = [
         'goarch': 'arm',
         'jni_dir': 'armeabi',
         'cc': 'arm-linux-androideabi-clang',
-    },
-    {
-        'arch': 'arm64',
-        'goarch': 'arm64',
-        'jni_dir': 'arm64-v8a',
-        'cc': 'aarch64-linux-android-clang',
-        'min_sdk': 21,
-    },
-    {
-        'arch': 'x86',
-        'goarch': '386',
-        'jni_dir': 'x86',
-        'cc': 'i686-linux-android-clang',
-    },
-    {
-        'arch': 'x86_64',
-        'goarch': 'amd64',
-        'jni_dir': 'x86_64',
-        'cc': 'x86_64-linux-android21-clang',
-        'min_sdk': 21,
     }
 ]
 
@@ -54,9 +34,7 @@ def get_min_sdk(project_dir):
 
 
 def get_ndk_home():
-    if not os.environ.get('ANDROID_NDK_HOME', ''):
-        fail('ANDROID_NDK_HOME environment variable not defined')
-    return os.environ['ANDROID_NDK_HOME']
+    return os.environ.get('ANDROID_NDK_HOME', '/opt/android-ndk/')
 
 
 if platform.system() not in SUPPORTED_PYTHON_PLATFORMS:
@@ -102,15 +80,12 @@ for target in BUILD_TARGETS:
     if not os.path.isdir(standalone_ndk_dir):
         print('Building standalone NDK for', target['arch'], 'API level', target_min_sdk, 'to', standalone_ndk_dir)
         subprocess.check_call([
-            sys.executable,
-            os.path.join(get_ndk_home(), 'build', 'tools', 'make_standalone_toolchain.py'),
-            '--arch',
-            target['arch'],
-            '--api',
-            target_min_sdk,
-            '--install-dir',
-            standalone_ndk_dir,
-            '-v'
+            '/bin/bash',
+            os.path.join(get_ndk_home(), 'build', 'tools', 'make-standalone-toolchain.sh'),
+            f'--arch={target["arch"]}',
+            f'--toolchain=arm-linux-androideabi-clang3.5',
+            f'--platform=android-9',
+            f'--install-dir={standalone_ndk_dir}'
         ])
 
     print('Building syncthing')
@@ -119,10 +94,24 @@ for target in BUILD_TARGETS:
     environ.update({
         'GO111MODULE': 'on',
         'CGO_ENABLED': '1',
+        'BUILDDEBUG' : '1',
+        'EXTRA_LDFLAGS': '-linkmode external -extldflags -static'
     })
 
+    cc = os.path.join(standalone_ndk_dir, 'bin', target['cc'])
+
+    lines = open(cc, 'r').readlines()
+    if len(lines) == 7:
+        with open(cc, 'w') as f:
+            f.write('#!/bin/bash\n')
+
+            for l in lines:
+                f.write(l)
+                f.write('\n')
+
+
     subprocess.check_call([
-        'go', 'run', 'build.go', '-goos', 'android', '-goarch', target['goarch'], '-cc', os.path.join(standalone_ndk_dir, 'bin', target['cc'])
+        'go', 'run', 'build.go', '-goos', 'android', '-goarch', target['goarch'], '-cc', cc
     ] + pkg_argument + ['-no-upgrade', 'build'], env=environ, cwd=syncthing_dir)
 
     # Copy compiled binary to jniLibs folder

@@ -4,15 +4,18 @@
 [![License: MPLv2](https://img.shields.io/badge/License-MPLv2-blue.svg)](https://opensource.org/licenses/MPL-2.0)
 [![Bountysource](https://api.bountysource.com/badge/tracker?tracker_id=1183310)](https://www.bountysource.com/teams/syncthing-android)
 
-A wrapper of [Syncthing](https://github.com/syncthing/syncthing) for Android.
+A wrapper of [Syncthing](https://github.com/syncthing/syncthing) for really old versions of Android (v9). Mainly for SONY pmca cameras.
 
-<img src="app/src/main/play/listings/en-GB/graphics/phone-screenshots/screenshot_phone_1.png" alt="screenshot 1" width="200" /> <img src="app/src/main/play/listings/en-GB/graphics/phone-screenshots/screenshot_phone_2.png" alt="screenshot 2" width="200" /> <img src="app/src/main/play/listings/en-GB/graphics/phone-screenshots/screenshot_phone_3.png" alt="screenshot 3" width="200" />
+# for building on SONY pmca
 
-[<img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" height="80">](https://play.google.com/store/apps/details?id=com.nutomic.syncthingandroid) [<img alt="Get it on F-Droid" src="https://f-droid.org/badge/get-it-on.png" height="80">](https://f-droid.org/app/com.nutomic.syncthingandroid)
+1) remove any references to android_log_printf, and dlopen/dlclose etc. in /usr/lib/go/src/runtime/cgo/gcc_android.c
+   Otherwise a static binary can not be built.
 
-# Translations
+2) add something really hacky with cp syncthing/gobuild/standalone-ndk/android-10-arm/sysroot/usr/lib/libm.a syncthing/gobuild/standalone-ndk/android-10-arm/sysroot/usr/lib/liblog.a
 
-The project is translated on [Transifex](https://www.transifex.com/projects/p/syncthing-android/).
+# syncthing-android
+
+The [syncthing-wrapper](https://github.com/syncthing/syncthing-android) for really old Android versions, mainly for use with Sony cameras. 
 
 # Building
 
