@@ -95,6 +95,7 @@ for target in BUILD_TARGETS:
         'GO111MODULE': 'on',
         'CGO_ENABLED': '1',
         'BUILDDEBUG' : '1',
+        'EXTRA_CFLAGS': '-Os',
         'EXTRA_LDFLAGS': '-linkmode external -extldflags -static'
     })
 

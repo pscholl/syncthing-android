@@ -1,0 +1,79 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	/a3c87ab5/
+ACTION_RSYNC_EXIT	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String ACTION_RSYNC_EXIT   = "ACTION_RSYNC_EXIT";$/;"	f	class:SyncStateBroadcaster
+ACTION_RSYNC_REMOVE	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String ACTION_RSYNC_REMOVE = "ACTION_RSYNC_DELETE";$/;"	f	class:SyncStateBroadcaster
+ACTION_RSYNC_START	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String ACTION_RSYNC_START  = "ACTION_RSYNC_START";$/;"	f	class:SyncStateBroadcaster
+ACTION_RSYNC_STATUS	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String ACTION_RSYNC_STATUS = "ACTION_RSYNC_STATUS";$/;"	f	class:SyncStateBroadcaster
+EXTRA_BYTESTXED	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String EXTRA_BYTESTXED     = "BYTESTX";$/;"	f	class:SyncStateBroadcaster
+EXTRA_EXITCODE	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String EXTRA_EXITCODE      = "EXITCODE";$/;"	f	class:SyncStateBroadcaster
+EXTRA_EXITREASON	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String EXTRA_EXITREASON    = "EXITREASON";$/;"	f	class:SyncStateBroadcaster
+EXTRA_FILE	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String EXTRA_FILE          = "FILENAME";$/;"	f	class:SyncStateBroadcaster
+EXTRA_PROGRESS	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String EXTRA_PROGRESS      = "PROGRESS";$/;"	f	class:SyncStateBroadcaster
+EXTRA_RUNTIME	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String EXTRA_RUNTIME       = "RUNTIME";$/;"	f	class:SyncStateBroadcaster
+EXTRA_THROUGHTPUT	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public static final String EXTRA_THROUGHTPUT   = "THROUGHPUT";$/;"	f	class:SyncStateBroadcaster
+FOREGROUNDID	ls/schol/sonyalpharsync/MainService.java	/^    private static final int FOREGROUNDID = 0x007;$/;"	f	class:MainService	file:
+FOREGROUNDID	pscholl/sonysyncthing/MainService.java	/^    private static final int FOREGROUNDID = 0x007;$/;"	f	class:MainService	file:
+MainActivity	pscholl/sonysyncthing/MainActivity.java	/^public class MainActivity extends Activity {$/;"	c
+MainReceiver	ls/schol/sonyalpharsync/MainReceiver.java	/^public class MainReceiver extends BroadcastReceiver {$/;"	c
+MainService	ls/schol/sonyalpharsync/MainService.java	/^public class MainService extends Service {$/;"	c
+MainService	pscholl/sonysyncthing/MainService.java	/^public class MainService extends Service {$/;"	c
+ObserverService	ls/schol/sonyalpharsync/ObserverService.java	/^public class ObserverService extends Service {$/;"	c
+POLL_DELAY_MS	ls/schol/sonyalpharsync/ObserverService.java	/^    private static final long POLL_DELAY_MS = 5000;$/;"	f	class:ObserverService	file:
+PRIVKEY	ls/schol/sonyalpharsync/MainService.java	/^    private static final String PRIVKEY = "id_sync";$/;"	f	class:MainService	file:
+SDCARD_UPDATED	ls/schol/sonyalpharsync/ObserverService.java	/^    public static final Intent SDCARD_UPDATED = new Intent("ACTION_SDCARD_UPDATED");$/;"	f	class:ObserverService
+SOURCE	ls/schol/sonyalpharsync/MainService.java	/^    private static final String SOURCE = "\/sdcard\/DCIM\/";$/;"	f	class:MainService	file:
+SyncStateBroadcaster	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public SyncStateBroadcaster(Context c) {$/;"	m	class:SyncStateBroadcaster
+SyncStateBroadcaster	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^class SyncStateBroadcaster implements RSyncProcess.ProgressCallback {$/;"	c
+TARGET	ls/schol/sonyalpharsync/MainService.java	/^    private static final String TARGET = "phil@phils.fritz.box:\/volume1\/photo\/sony\/";$/;"	f	class:MainService	file:
+alarmIntent	ls/schol/sonyalpharsync/ObserverService.java	/^    private PendingIntent alarmIntent = null;$/;"	f	class:ObserverService	file:
+done	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public void done(final int result, String reason) {$/;"	m	class:SyncStateBroadcaster
+ls.schol.sonyalpharsync	ls/schol/sonyalpharsync/MainReceiver.java	/^package ls.schol.sonyalpharsync;$/;"	p
+ls.schol.sonyalpharsync	ls/schol/sonyalpharsync/MainService.java	/^package ls.schol.sonyalpharsync;$/;"	p
+ls.schol.sonyalpharsync	ls/schol/sonyalpharsync/ObserverService.java	/^package ls.schol.sonyalpharsync;$/;"	p
+ls.schol.sonyalpharsync	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^package ls.schol.sonyalpharsync;$/;"	p
+mButton	pscholl/sonysyncthing/MainActivity.java	/^    private Button mButton;$/;"	f	class:MainActivity	file:
+mBytesAvailable	ls/schol/sonyalpharsync/ObserverService.java	/^    protected long mBytesAvailable = -1;$/;"	f	class:ObserverService
+mCancelSync	pscholl/sonysyncthing/MainActivity.java	/^    private View.OnClickListener mCancelSync = new View.OnClickListener() {$/;"	f	class:MainActivity	file:
+mContext	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public final Context mContext;$/;"	f	class:SyncStateBroadcaster
+mExitReceiver	pscholl/sonysyncthing/MainActivity.java	/^    private BroadcastReceiver mExitReceiver = new BroadcastReceiver() {$/;"	f	class:MainActivity	file:
+mFileObserver	ls/schol/sonyalpharsync/MainService.java	/^    private FileObserver mFileObserver = null;$/;"	f	class:MainService	file:
+mFileObserver	pscholl/sonysyncthing/MainService.java	/^    private FileObserver mFileObserver = null;$/;"	f	class:MainService	file:
+mProcess	ls/schol/sonyalpharsync/MainService.java	/^    private RSyncProcess mProcess = null;$/;"	f	class:MainService	file:
+mProcess	pscholl/sonysyncthing/MainService.java	/^    private RSyncProcess mProcess = null;$/;"	f	class:MainService	file:
+mProgressBar	pscholl/sonysyncthing/MainActivity.java	/^    private ProgressBar mProgressBar;$/;"	f	class:MainActivity	file:
+mRemoveReceiver	pscholl/sonysyncthing/MainActivity.java	/^    private BroadcastReceiver mRemoveReceiver = new BroadcastReceiver() {$/;"	f	class:MainActivity	file:
+mRsyncStatusBroadcaster	ls/schol/sonyalpharsync/MainService.java	/^    private SyncStateBroadcaster mRsyncStatusBroadcaster;$/;"	f	class:MainService	file:
+mRsyncStatusBroadcaster	pscholl/sonysyncthing/MainService.java	/^    private SyncStateBroadcaster mRsyncStatusBroadcaster;$/;"	f	class:MainService	file:
+mStartReceiver	pscholl/sonysyncthing/MainActivity.java	/^    private BroadcastReceiver mStartReceiver = new BroadcastReceiver() {$/;"	f	class:MainActivity	file:
+mStartSync	pscholl/sonysyncthing/MainActivity.java	/^    private View.OnClickListener mStartSync = new View.OnClickListener() {$/;"	f	class:MainActivity	file:
+mStatusReceiver	pscholl/sonysyncthing/MainActivity.java	/^    private BroadcastReceiver mStatusReceiver = new BroadcastReceiver() {$/;"	f	class:MainActivity	file:
+mStatusText	pscholl/sonysyncthing/MainActivity.java	/^    private TextView mStatusText;$/;"	f	class:MainActivity	file:
+mThroughput	pscholl/sonysyncthing/MainActivity.java	/^    private TextView mThroughput;$/;"	f	class:MainActivity	file:
+mTotalBytesText	pscholl/sonysyncthing/MainActivity.java	/^    private TextView mTotalBytesText;$/;"	f	class:MainActivity	file:
+onBind	ls/schol/sonyalpharsync/MainService.java	/^    public IBinder onBind(Intent intent) {$/;"	m	class:MainService
+onBind	ls/schol/sonyalpharsync/ObserverService.java	/^    public IBinder onBind(Intent intent) {$/;"	m	class:ObserverService
+onBind	pscholl/sonysyncthing/MainService.java	/^    public IBinder onBind(Intent intent) {$/;"	m	class:MainService
+onCreate	pscholl/sonysyncthing/MainActivity.java	/^    protected void onCreate(Bundle savedInstanceState) {$/;"	m	class:MainActivity
+onDestroy	ls/schol/sonyalpharsync/MainService.java	/^    public void onDestroy() {$/;"	m	class:MainService
+onDestroy	ls/schol/sonyalpharsync/ObserverService.java	/^    public void onDestroy() {$/;"	m	class:ObserverService
+onDestroy	pscholl/sonysyncthing/MainService.java	/^    public void onDestroy() {$/;"	m	class:MainService
+onKeyDown	pscholl/sonysyncthing/MainActivity.java	/^    public boolean onKeyDown(int keyCode, KeyEvent event) {$/;"	m	class:MainActivity
+onPause	pscholl/sonysyncthing/MainActivity.java	/^    protected void onPause() {$/;"	m	class:MainActivity
+onReceive	ls/schol/sonyalpharsync/MainReceiver.java	/^    public void onReceive(Context context, Intent intent) {$/;"	m	class:MainReceiver
+onResume	pscholl/sonysyncthing/MainActivity.java	/^    protected void onResume() {$/;"	m	class:MainActivity
+onStartCommand	ls/schol/sonyalpharsync/MainService.java	/^    public int onStartCommand(Intent intent, int flags, int startId) {$/;"	m	class:MainService
+onStartCommand	ls/schol/sonyalpharsync/ObserverService.java	/^    public int onStartCommand(Intent intent, int flags, int startId) {$/;"	m	class:ObserverService
+onStartCommand	pscholl/sonysyncthing/MainService.java	/^    public int onStartCommand(Intent intent, int flags, int startId) {$/;"	m	class:MainService
+progress	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public void progress(long bytestxed, int progress, String throughtput, String runtime) {$/;"	m	class:SyncStateBroadcaster
+pscholl.sonysyncthing	pscholl/sonysyncthing/MainActivity.java	/^package pscholl.sonysyncthing;$/;"	p
+pscholl.sonysyncthing	pscholl/sonysyncthing/MainService.java	/^package pscholl.sonysyncthing;$/;"	p
+remove	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public void remove(String filename) {$/;"	m	class:SyncStateBroadcaster
+start	ls/schol/sonyalpharsync/SyncStateBroadcaster.java	/^    public void start() {$/;"	m	class:SyncStateBroadcaster
+unpackKeyFile	ls/schol/sonyalpharsync/MainService.java	/^    private String unpackKeyFile() throws IOException {$/;"	m	class:MainService	file:
+unpackKeyFile	pscholl/sonysyncthing/MainService.java	/^    private String unpackKeyFile() throws IOException {$/;"	m	class:MainService	file:
