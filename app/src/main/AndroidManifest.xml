@@ -28,7 +28,7 @@
         </activity>
 
         <service
-            android:name=".MainService"/>
+            android:name=".SyncthingService"/>
 
         <!--
         <service
