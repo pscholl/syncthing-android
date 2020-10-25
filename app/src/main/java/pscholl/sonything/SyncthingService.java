@@ -5,8 +5,9 @@ import android.content.Context;
 import android.util.Log;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
-import android.app.IntentService;
 import android.content.Intent;
+import android.app.Service;
+import android.os.IBinder;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -37,13 +38,15 @@ import android.os.Environment;
  * The setup requires a loop-mount on the sd-card, hence a root hack is
  * required (for sony cams this is done with libtweak.so).
  */
-public class SyncthingService extends IntentService {
+public class SyncthingService extends Service {
 
     public final static String ACTION_APIKEY = "action_apikey";
     public final static String EXTRA_APIKEY = "extra_apikey";
+    protected Process mProcess = null;
 
-    public SyncthingService() {
-        super("SyncthingService");
+    @Override
+    public IBinder onBind(Intent i) {
+      return null;
     }
 
     /**
@@ -51,10 +54,18 @@ public class SyncthingService extends IntentService {
      * is already running, if so do nothing.
      */
     @Override
-    public void onHandleIntent(Intent intent) {
-        try {
+    public int onStartCommand(Intent intent, int flags, int startId) {
+      System.err.println("started");
+      new Thread(bootSyncthing).start();
+      return START_STICKY;
+    }
+
+    protected Runnable bootSyncthing = new Runnable() {
+      @Override
+      public void run() {
+         try {
             File home = setupHome(getApplicationContext());
-            Process p = startSyncthing(home);
+            mProcess = startSyncthing(home);
 
             Intent apiKeyIntent = new Intent();
             apiKeyIntent.setAction(ACTION_APIKEY);
@@ -63,7 +74,8 @@ public class SyncthingService extends IntentService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+      }
+    };
 
     protected Process startSyncthing(File home) throws Exception {
         //
@@ -76,6 +88,9 @@ public class SyncthingService extends IntentService {
             "-verbose",
             "-logfile", "default",
             "-home", home.toString());
+
+        pb.environment().put("STTRACE", "all");
+        pb.environment().put("GOMAXPROCS", "1");
 
         System.err.println("executing " + pb.command().toString());
         return pb.start();
