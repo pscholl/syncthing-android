@@ -40,7 +40,7 @@ import android.os.Environment;
 public class SyncthingService extends IntentService {
 
     public final static String ACTION_APIKEY = "action_apikey";
-    public final static String EXTRA_APIKEY = "extrac_apikey";
+    public final static String EXTRA_APIKEY = "extra_apikey";
 
     public SyncthingService() {
         super("SyncthingService");
@@ -73,7 +73,6 @@ public class SyncthingService extends IntentService {
         ProcessBuilder pb = new ProcessBuilder(
             new File(home, "libsyncthing.so").toString(),
             "-no-browser",
-            "-no-restart",
             "-verbose",
             "-logfile", "default",
             "-home", home.toString());
@@ -140,7 +139,7 @@ public class SyncthingService extends IntentService {
         //
         InputStream input = c.getAssets().open("config");
         File outPath = new File(home, "config.xml");
-        Runtime.getRuntime().exec("chmod 777 " + outPath);
+        //Runtime.getRuntime().exec("chmod 777 " + outPath);
 
         if (!outPath.exists()) {
             OutputStream output = new FileOutputStream(outPath);

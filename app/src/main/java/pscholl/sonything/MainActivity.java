@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.os.Handler;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -30,17 +31,23 @@ public class MainActivity extends Activity {
 
     protected RequestQueue mQueue = null;
     protected Map<String, String> mHeaders = null;
+    protected boolean mUpdateUI = false;
+
+    /**
+     * delay between request for status updates to syncthing. Do not make much
+     * faster, seem syncthing cannot handle that.
+     */
+    protected final long UPDATEDELAY = 10000;
 
     @Override
     protected void onDestroy() {
         unregisterReceiver(onApiKey);
+        super.onDestroy();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
 
         //
         // make sure that we receive updates from the syncthing service
@@ -49,56 +56,33 @@ public class MainActivity extends Activity {
         filter.addAction(SyncthingService.ACTION_APIKEY);
         registerReceiver(onApiKey, filter);
 
+
+        //
+        // set-up the UI
+        //
+        setContentView(R.layout.activity_main);
+
+        //
+        // prep the volley queue
+        //
+        mQueue = Volley.newRequestQueue(this); 
+    }
+
+    @Override
+    protected void onResume() {
+        mUpdateUI = true;
+
         //
         // this (re-)starts syncthing
         //
         startService(new Intent(this, SyncthingService.class));
 
-
-        mQueue = Volley.newRequestQueue(this);
-
-        //
-        // getting the API key is buggy, the only surefire way would
-        // be to wait until mSyncthing has setup the home, and then
-        // read the config, i.e. find the api key
-        //
-        //mHeaders = new HashMap<String, String>();
-        //mHeaders.put( "X-API-KEY", Syncthing.getApiKey(this) );
-
-        ////
-        //// start syncthing if not running
-        ////
-        //JsonObjectRequest ping = new JsonObjectRequest(
-        //    Request.Method.GET,
-        //    "http://localhost:8384/rest/system/ping",
-        //    null,
-        //    new Response.Listener<JSONObject>() {
-        //        @Override
-        //        public void onResponse(JSONObject obj) {}
-        //    },
-        //    new Response.ErrorListener() {
-        //        @Override
-        //        public void onErrorResponse(VolleyError err) {
-        //            mSyncthing.start();
-        //            System.err.println(err.toString());
-        //        }
-        //    }) {
-        //    public Map<String, String> getHeaders() { return mHeaders; }
-        //};
-
-        //mQueue.add(ping);
-    }
-
-    @Override
-    protected void onResume() {
         super.onResume();
-
-        // TODO connect to REST api and display some information
-        // with volley https://developer.android.com/training/volley
     }
 
     @Override
     protected void onPause() {
+        mUpdateUI = false;
         super.onPause();
     }
 
@@ -119,13 +103,63 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * schedules a REST/Volley request with delay.
+     */
+    protected final Handler handler = new Handler();
+    protected void scheduleRequest(final JsonObjectRequest req, long delay) {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() { mQueue.add(req); }
+        }, delay);
+    }
+
+    /**
      * receives the apikey from the syncthing service. Once this is there we
      * know that syncthing is running and we can get updates from the REST api.
      */
     protected BroadcastReceiver onApiKey = new BroadcastReceiver() {
         @Override
         public void onReceive(Context c, Intent i) {
-            System.err.println("rx'ed an intent");
+            String apikey = i.getStringExtra(SyncthingService.EXTRA_APIKEY);
+
+            mHeaders = new HashMap<String, String>();
+            mHeaders.put( "X-API-KEY", apikey );
+
+            //scheduleRequest(onSyncthingEvents, 0);
         }
+    };
+
+    /**
+     * get a status update through the REST api and update the UI.
+     *
+     * see https://docs.syncthing.net/rest/events-get.html
+     *
+     * TODO remove UPDATEDELAY and schedule via the blocking of the rest API,
+     *      i.e. just keep on requesting, but add since parameter to request
+     *
+     */
+    protected JsonObjectRequest onSyncthingEvents = new JsonObjectRequest(
+        Request.Method.GET,
+        "http://localhost:8384/rest/events",
+        null,
+        new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject obj) {
+                System.err.println("got rsp " + obj.toString());
+
+                if (mUpdateUI)
+                    scheduleRequest(onSyncthingEvents, UPDATEDELAY);
+            }
+        },
+        new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError err) {
+                System.err.println(err.toString());
+
+                if (mUpdateUI)
+                    scheduleRequest(onSyncthingEvents, UPDATEDELAY);
+            }
+        }) {
+        public Map<String, String> getHeaders() { return mHeaders; }
     };
 }
