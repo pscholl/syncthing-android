@@ -26,6 +26,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.JsonArrayRequest;
 
 public class MainActivity extends Activity {
 
@@ -38,6 +39,11 @@ public class MainActivity extends Activity {
      * faster, seem syncthing cannot handle that.
      */
     protected final long UPDATEDELAY = 10000;
+
+    /**
+     * timeout after a restart due to error
+     */
+    protected final long RESTARTDELAY = 20000;
 
     @Override
     protected void onDestroy() {
@@ -55,7 +61,6 @@ public class MainActivity extends Activity {
         IntentFilter filter = new IntentFilter();
         filter.addAction(SyncthingService.ACTION_APIKEY);
         registerReceiver(onApiKey, filter);
-
 
         //
         // set-up the UI
@@ -106,7 +111,7 @@ public class MainActivity extends Activity {
      * schedules a REST/Volley request with delay.
      */
     protected final Handler handler = new Handler();
-    protected void scheduleRequest(final JsonObjectRequest req, long delay) {
+    protected void scheduleRequest(final JsonArrayRequest req, long delay) {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() { mQueue.add(req); }
@@ -125,7 +130,7 @@ public class MainActivity extends Activity {
             mHeaders = new HashMap<String, String>();
             mHeaders.put( "X-API-KEY", apikey );
 
-            //scheduleRequest(onSyncthingEvents, 0);
+            scheduleRequest(onSyncthingEvents, 0);
         }
     };
 
@@ -138,13 +143,13 @@ public class MainActivity extends Activity {
      *      i.e. just keep on requesting, but add since parameter to request
      *
      */
-    protected JsonObjectRequest onSyncthingEvents = new JsonObjectRequest(
+    protected JsonArrayRequest onSyncthingEvents = new JsonArrayRequest(
         Request.Method.GET,
         "http://localhost:8384/rest/events",
         null,
-        new Response.Listener<JSONObject>() {
+        new Response.Listener<JSONArray>() {
             @Override
-            public void onResponse(JSONObject obj) {
+            public void onResponse(JSONArray obj) {
                 System.err.println("got rsp " + obj.toString());
 
                 if (mUpdateUI)
@@ -154,10 +159,23 @@ public class MainActivity extends Activity {
         new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError err) {
-                System.err.println(err.toString());
+                StringBuilder sb = new StringBuilder(err.toString());
+                if (err.toString().length() > 160)
+                  sb.delete(80, err.toString().length()-80);
+                System.err.println(sb.toString());
 
-                if (mUpdateUI)
-                    scheduleRequest(onSyncthingEvents, UPDATEDELAY);
+                // will be activated through onApiKey
+                //if (mUpdateUI)
+                //    scheduleRequest(onSyncthingEvents, RESTARTDELAY);
+
+                //
+                // restart syncthing on error, will call here again via
+                // the onApiKey() callback and schedule the next request
+                //
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() { startService(new Intent(MainActivity.this, SyncthingService.class));  }
+                }, RESTARTDELAY);
             }
         }) {
         public Map<String, String> getHeaders() { return mHeaders; }
