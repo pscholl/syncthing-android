@@ -1,0 +1,58 @@
+--- /usr/lib/go/src/runtime/cgo/gcc_android.c	2020-11-28 14:33:50.432525082 +1300
++++ gcc_android.c_orig	2020-11-06 11:52:31.000000000 +1300
+@@ -25,9 +25,9 @@
+ 	va_end(ap);
+ 	fprintf(stderr, "\n");
+ 
+-	// va_start(ap, format);
+-	// __android_log_vprint(ANDROID_LOG_FATAL, "runtime/cgo", format, ap);
+-	// va_end(ap);
++	va_start(ap, format);
++	__android_log_vprint(ANDROID_LOG_FATAL, "runtime/cgo", format, ap);
++	va_end(ap);
+ 
+ 	abort();
+ }
+@@ -47,26 +47,26 @@
+ {
+ 	pthread_key_t k;
+ 	int i, err;
+-	// void *handle, *get_ver, *off;
++	void *handle, *get_ver, *off;
+ 
+ 	// Check for Android Q where we can use the free TLS_SLOT_APP slot.
+-	// handle = dlopen("libc.so", RTLD_LAZY);
+-	// if (handle == NULL) {
+-	// 	fatalf("inittls: failed to dlopen main program");
+-	// 	return;
+-	// }
++	handle = dlopen("libc.so", RTLD_LAZY);
++	if (handle == NULL) {
++		fatalf("inittls: failed to dlopen main program");
++		return;
++	}
+ 	// android_get_device_api_level is introduced in Android Q, so its mere presence
+ 	// is enough.
+-	// get_ver = dlsym(handle, "android_get_device_api_level");
+-	// dlclose(handle);
+-	//if (get_ver != NULL) {
+-	//	off = (void *)(TLS_SLOT_APP*sizeof(void *));
+-	//	// tlsg is initialized to Q's free TLS slot. Verify it while we're here.
+-	//	if (*tlsg != off) {
+-	//		fatalf("tlsg offset wrong, got %ld want %ld\n", *tlsg, off);
+-	//	}
+-	//	return;
+-	//}
++	get_ver = dlsym(handle, "android_get_device_api_level");
++	dlclose(handle);
++	if (get_ver != NULL) {
++		off = (void *)(TLS_SLOT_APP*sizeof(void *));
++		// tlsg is initialized to Q's free TLS slot. Verify it while we're here.
++		if (*tlsg != off) {
++			fatalf("tlsg offset wrong, got %ld want %ld\n", *tlsg, off);
++		}
++		return;
++	}
+ 
+ 	err = pthread_key_create(&k, nil);
+ 	if(err != 0) {

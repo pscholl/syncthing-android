@@ -9,7 +9,7 @@ A wrapper of [Syncthing](https://github.com/syncthing/syncthing) for really old 
 # for building on SONY pmca
 
 1) remove any references to android_log_printf, and dlopen/dlclose etc. in /usr/lib/go/src/runtime/cgo/gcc_android.c
-   Otherwise a static binary can not be built.
+   Otherwise a static binary can not be built. or apply patch < gcc_android_v9.patch
 
 2) add something really hacky with cp syncthing/gobuild/standalone-ndk/android-10-arm/sysroot/usr/lib/libm.a syncthing/gobuild/standalone-ndk/android-10-arm/sysroot/usr/lib/liblog.a
 
