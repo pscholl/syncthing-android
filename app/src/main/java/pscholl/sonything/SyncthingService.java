@@ -89,8 +89,8 @@ public class SyncthingService extends Service {
             "-logfile", "default",
             "-home", home.toString());
 
-        pb.environment().put("STTRACE", "all");
-        pb.environment().put("GOMAXPROCS", "1");
+        //pb.environment().put("STTRACE", "all");
+        //pb.environment().put("GOMAXPROCS", "1");
 
         System.err.println("executing " + pb.command().toString());
         return pb.start();
