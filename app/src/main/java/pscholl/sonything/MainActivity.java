@@ -30,9 +30,10 @@ import com.android.volley.toolbox.JsonArrayRequest;
 
 public class MainActivity extends Activity {
 
+    protected boolean mUpdateUI = false;
     protected RequestQueue mQueue = null;
     protected Map<String, String> mHeaders = null;
-    protected boolean mUpdateUI = false;
+    protected Map<String, String> mParams = null;
 
     /**
      * delay between request for status updates to syncthing. Do not make much
@@ -130,9 +131,19 @@ public class MainActivity extends Activity {
             mHeaders = new HashMap<String, String>();
             mHeaders.put( "X-API-KEY", apikey );
 
-            scheduleRequest(onSyncthingEvents, 0);
+            mParams = new HashMap<String, String>();
+            mParams.put( "since", Integer.toString(0) );
+
+            scheduleRequest(createEventRequest(), 0);
         }
     };
+
+    /**
+     * handles single syncthingEvents comming in from the REST api
+     */
+    protected void onSyncThingEvent(JSONObject obj) {
+        System.err.println(obj.toString());
+    }
 
     /**
      * get a status update through the REST api and update the UI.
@@ -143,22 +154,37 @@ public class MainActivity extends Activity {
      *      i.e. just keep on requesting, but add since parameter to request
      *
      */
-    protected JsonArrayRequest onSyncthingEvents = new JsonArrayRequest(
+    protected JsonArrayRequest createEventRequest() {
+      return new JsonArrayRequest(
         Request.Method.GET,
-        "http://localhost:8384/rest/events",
+        "http://localhost:8384/rest/events?since="+mParams.get("since"),
         null,
         new Response.Listener<JSONArray>() {
             @Override
-            public void onResponse(JSONArray obj) {
-                System.err.println("got rsp " + obj.toString());
+            public void onResponse(JSONArray arr) {
+                for (int i = 0; i < arr.length(); i++) try {
+                  JSONObject obj = arr.getJSONObject(i);
+                  onSyncThingEvent(obj);
+
+                  //
+                  // update the 'since' getParam to filter events
+                  // to only those that have not been seen
+                  //
+                  mParams.put( "since", obj.getString( "globalID" ) );
+                }
+                catch (Exception e) { System.err.println(e); }
 
                 if (mUpdateUI)
-                    scheduleRequest(onSyncthingEvents, UPDATEDELAY);
+                    scheduleRequest(createEventRequest(), UPDATEDELAY);
             }
         },
         new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError err) {
+
+                if (err instanceof com.android.volley.TimeoutError)
+                  return; // ignore
+
                 StringBuilder sb = new StringBuilder(err.toString());
                 if (err.toString().length() > 160)
                   sb.delete(80, err.toString().length()-80);
@@ -167,6 +193,11 @@ public class MainActivity extends Activity {
                 // will be activated through onApiKey
                 //if (mUpdateUI)
                 //    scheduleRequest(onSyncthingEvents, RESTARTDELAY);
+
+                //
+                // reset the events we want to get
+                //
+                mParams.put( "since", Integer.toString(0) );
 
                 //
                 // restart syncthing on error, will call here again via
@@ -180,4 +211,5 @@ public class MainActivity extends Activity {
         }) {
         public Map<String, String> getHeaders() { return mHeaders; }
     };
+    }
 }

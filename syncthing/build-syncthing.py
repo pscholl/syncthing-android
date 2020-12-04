@@ -116,13 +116,27 @@ for target in BUILD_TARGETS:
     ] + pkg_argument + ['-no-upgrade', 'build'], env=environ, cwd=syncthing_dir)
 
     # Copy compiled binary to jniLibs folder
-    target_dir = os.path.join(project_dir, 'app', 'src', 'main', 'jniLibs', target['jni_dir'])
-    if not os.path.isdir(target_dir):
-        os.makedirs(target_dir)
-    target_artifact = os.path.join(target_dir, 'libsyncthing.so')
-    if os.path.exists(target_artifact):
-        os.unlink(target_artifact)
-    os.rename(os.path.join(syncthing_dir, 'syncthing'), target_artifact)
+    # target_dir = os.path.join(project_dir, 'app', 'src', 'main', 'jniLibs', target['jni_dir'])
+    # if not os.path.isdir(target_dir):
+    #     os.makedirs(target_dir)
+    # target_artifact = os.path.join(target_dir, 'libsyncthing.so')
+    # if os.path.exists(target_artifact):
+    #     os.unlink(target_artifact)
+    # os.rename(os.path.join(syncthing_dir, 'syncthing'), target_artifact)
+
+    # build a gzip-compressed ext2 fs image which contains the syncthing binary
+    src = os.path.join(syncthing_dir, 'syncthing')
+    subprocess.check_call(f'dd if=/dev/zero of=sthing.ext2 bs=4k count=256k'.split())
+    subprocess.check_call(f'mkfs.ext2 sthing.ext2'.split())
+    # this is too large for the package atm
+    subprocess.check_call(f'e2cp -P 755 -G 0 -O 0 {src} sthing.ext2:libsyncthing.so'.split())
+    subprocess.check_call(f'e2cp -P 666 -G 0 -O 0 config-syncthing sthing.ext2:config.xml'.split())
+    subprocess.check_call(f'gzip -S .z sthing.ext2'.split())
+    tgtdir = os.path.join(project_dir, 'app', 'src', 'main', 'assets')
+    artifact = os.path.join(tgtdir, 'sthing.ext2.z')
+    if not os.path.isdir(tgtdir): os.makedirs(tgtdir)
+    if os.path.exists(artifact): os.unlink(artifact)
+    os.rename('sthing.ext2.z', artifact)
 
     print('Finished build for', target['arch'])
 

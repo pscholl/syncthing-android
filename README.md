@@ -13,6 +13,10 @@ A wrapper of [Syncthing](https://github.com/syncthing/syncthing) for really old 
 
 2) add something really hacky with cp syncthing/gobuild/standalone-ndk/android-10-arm/sysroot/usr/lib/libm.a syncthing/gobuild/standalone-ndk/android-10-arm/sysroot/usr/lib/liblog.a
 
+# installing on SONY pmca
+
+ If there is enough space on your internal memory (about 50mb) you should be able to install the .apk directly. If not you need to remove the app/src/main/assets/sthing.ext2.z file, transfer it to your sdcard manually and unpack it there to create the file /mnt/sdcard/sthing.ex2. This is a ext2 filesystem image with contains the syncthing binary and a default config file.
+
 # syncthing-android
 
 The [syncthing-wrapper](https://github.com/syncthing/syncthing-android) for really old Android versions, mainly for use with Sony cameras. 

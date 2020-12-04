@@ -1,6 +1,6 @@
 task buildNative(type: Exec) {
     inputs.dir("$projectDir/src/")
-    outputs.dir("$projectDir/../app/src/main/jniLibs/")
+    outputs.dir("$projectDir/../app/src/main/assets/")
     executable = 'python'
     args = ['-u', './build-syncthing.py']
 }
@@ -9,6 +9,6 @@ task buildNative(type: Exec) {
  * Use separate task instead of standard clean(), so these folders aren't deleted by `gradle clean`.
  */
 task cleanNative(type: Delete) {
-    delete "$projectDir/../app/src/main/jniLibs/"
+    delete "$projectDir/../app/src/main/assets/sthing.ext2.gz"
     delete "gobuild"
 }

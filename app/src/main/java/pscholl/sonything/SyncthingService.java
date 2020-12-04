@@ -1,5 +1,9 @@
 package pscholl.sonything;
 
+
+
+import java.nio.file.Files;
+
 import com.github.ma1co.openmemories.tweak.*;
 import android.content.Context;
 import android.util.Log;
@@ -25,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.GZIPInputStream;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -98,17 +103,12 @@ public class SyncthingService extends Service {
 
     /**
      * loop-mount an ext2 filesystem (stored as a file on the sd-card) to an
-     * app-accesible directory. This give syncthing enouhg storage space to work,
-     * and allows for filenames that are not limited by the vfat filesystem.
+     * app-accesible directory. This give syncthing enough storage space to
+     * work, and allows for filenames that are not limited by the (buggy) vfat
+     * filesystem implemetation.
      */
     protected File setupHome(Context c) throws Exception {
         //
-        // TODO install libsyncthing.so on loop-mounted home. There is not
-        // enough space on the internal memory for the android installation
-        // method (needs double the amount), so put the executable into the
-        // res/ folder and unpack to loop-mounted...
-        //
-
         // TODO make sure everything is owned by the current user
         //
 
@@ -121,12 +121,10 @@ public class SyncthingService extends Service {
         s = pi.applicationInfo.dataDir;
 
         //
-        // Do create a home. Only works if there is an /sdcard mount and there
-        // is a sthing.ext2 file that contains an ext2 filesystem. Loop-mount
-        // this as an ext2 filesystem with the root-hack from libtweak.so. Then
-        // unpack the default config.
-        //
-        // TODO add mkfs.ext2 to the tools and create file if it's not there.
+        // Do create a home. Only works if there is an /sdcard mount, unpack the
+        // sthing.ext2 if not yet on sdcard. Loop-mount this as an ext2
+        // filesystem with the root-hack from libtweak.so. sthing.ext2 contains
+        // a default config and the syncthing binary.
         //
         File android = new File("/android/"),
              ext2 = new File("/mnt/sdcard/STHING.EX2"),
@@ -135,8 +133,26 @@ public class SyncthingService extends Service {
         if (!isSdPresent())
             throw new Exception("external storage not available");
 
-        if (!ext2.exists())
-            throw new Exception(ext2.getCanonicalPath() + " not found.");
+        if (!ext2.exists()) {
+            System.err.println("deflating ext2 " + ext2.toString());
+
+            try {
+                GZIPInputStream input = new GZIPInputStream(c.getAssets().open("sthing.ext2.z"), 1024);
+                FileOutputStream output = new FileOutputStream(ext2);
+
+                byte[] buffer = new byte[1024];
+                int length;
+
+                while ((length = input.read(buffer)) > 0)
+                    output.write(buffer, 0, length);
+
+                output.close();
+                input.close();
+            } catch (Exception e) {
+              e.printStackTrace();
+              System.err.println("unable to deflate ext2 image: is it missing?");
+            }
+        }
 
         System.err.println("setting up home " + home.toString());
 
@@ -148,26 +164,6 @@ public class SyncthingService extends Service {
             new File(android, home.getAbsolutePath()).getAbsolutePath());
 
         System.err.println("setup done");
-
-        //
-        // if we get there, everything is setup so copy over the default config
-        //
-        InputStream input = c.getAssets().open("config");
-        File outPath = new File(home, "config.xml");
-        //Runtime.getRuntime().exec("chmod 777 " + outPath);
-
-        if (!outPath.exists()) {
-            OutputStream output = new FileOutputStream(outPath);
-
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = input.read(buffer)) > 0)
-                output.write(buffer, 0, length);
-
-            output.close();
-            input.close();
-        }
-        System.err.println("copy done");
 
         return home;
     }
