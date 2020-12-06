@@ -1,7 +1,5 @@
 package pscholl.sonything;
 
-
-
 import java.nio.file.Files;
 
 import com.github.ma1co.openmemories.tweak.*;
@@ -109,10 +107,6 @@ public class SyncthingService extends Service {
      */
     protected File setupHome(Context c) throws Exception {
         //
-        // TODO make sure everything is owned by the current user
-        //
-
-        //
         // get package dir
         //
         PackageManager m = c.getPackageManager();
@@ -126,13 +120,17 @@ public class SyncthingService extends Service {
         // filesystem with the root-hack from libtweak.so. sthing.ext2 contains
         // a default config and the syncthing binary.
         //
-        File android = new File("/android/"),
+        File droid = new File("/android/"),
              ext2 = new File("/mnt/sdcard/STHING.EX2"),
              home = new File(new File(s).getParentFile().getParentFile(), "sthing");
 
         if (!isSdPresent())
             throw new Exception("external storage not available");
 
+        //
+        // deflate from sthing.ext2.z asset if available, if not log error
+        // TODO should give some user feedback
+        //
         if (!ext2.exists()) {
             System.err.println("deflating ext2 " + ext2.toString());
 
@@ -154,14 +152,28 @@ public class SyncthingService extends Service {
             }
         }
 
+        //
+        // setup the home dir:
+        //  1. create dir (fails silently)
+        //  1. check filesystem (will fail if already mounted)
+        //  1. and mount fs (will fail if alread mounted).
+        //  1. chmod the directory
+        //  1. chown everything for current user
+        //  1. done (finally)
+        //
         System.err.println("setting up home " + home.toString());
 
         home.mkdir();
+        int pid = android.os.Process.myPid();
+        Shell.exec("e2fsck -p " +
+            new File(droid, ext2.getAbsolutePath()).getAbsolutePath());
         Shell.exec("mount -o loop -t ext2 " +
-            new File(android, ext2.getAbsolutePath()).getAbsolutePath() + " " +
-            new File(android, home.getAbsolutePath()).getAbsolutePath());
+            new File(droid, ext2.getAbsolutePath()).getAbsolutePath() + " " +
+            new File(droid, home.getAbsolutePath()).getAbsolutePath());
         Shell.exec("chmod 777 " +
-            new File(android, home.getAbsolutePath()).getAbsolutePath());
+            new File(droid, home.getAbsolutePath()).getAbsolutePath());
+        Shell.exec("chown -R $(ls -ln /proc/" + pid + "/cmdline | egrep -o [0-9][0-9]+) " +
+            new File(droid, home.getAbsolutePath()).getAbsolutePath());
 
         System.err.println("setup done");
 
