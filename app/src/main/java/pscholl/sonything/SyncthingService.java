@@ -87,6 +87,8 @@ public class SyncthingService extends Service {
             // restart syncthing as long as there are socket timeouts to
             // detect when syncthing is hanging.
             //
+            // TODO sometimes the exec goes wrong, i.e. need to restart immediately then
+            //
            while( mThreadRunning ) {
               File home = setupHome(getApplicationContext());
               mProcess = startSyncthing(home);
@@ -108,6 +110,8 @@ public class SyncthingService extends Service {
         while (true) try {
             Thread.sleep(1000);
 
+            System.err.println("checking");
+
             Socket s = new Socket();
             s.connect(new java.net.InetSocketAddress(
                       java.net.InetAddress.getByName("localhost"), 8384),
@@ -126,19 +130,25 @@ public class SyncthingService extends Service {
         //
         // execute libsyncthing.so in the home-directory
         //
-        System.err.println("executing ");
-        ProcessBuilder pb = new ProcessBuilder(
-            new File(home, "libsyncthing.so").toString(),
-            "-no-browser",
-            "-verbose",
-            "-logfile", "default",
-            "-home", home.toString());
+        while (true) try {
+          System.err.println("executing ");
+          ProcessBuilder pb = new ProcessBuilder(
+              new File(home, "libsyncthing.so").toString(),
+              "-no-browser",
+              "-verbose",
+              "-logfile", "default",
+              "-home", home.toString());
 
-        //pb.environment().put("STTRACE", "all");
-        //pb.environment().put("GOMAXPROCS", "1");
 
-        System.err.println("executing " + pb.command().toString());
-        return pb.start();
+          System.err.println("executing " + pb.command().toString());
+          return pb.start();
+        } catch (java.io.IOException e) {
+          //
+          // happens when mounting the fs was not fast enough
+          //
+          e.printStackTrace();
+          Thread.sleep(1000);
+        }
     }
 
     /**
