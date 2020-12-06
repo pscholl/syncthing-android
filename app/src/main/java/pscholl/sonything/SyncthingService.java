@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
@@ -46,10 +47,25 @@ public class SyncthingService extends Service {
     public final static String ACTION_APIKEY = "action_apikey";
     public final static String EXTRA_APIKEY = "extra_apikey";
     protected Process mProcess = null;
+    protected Thread mThread = null;
+    protected boolean mThreadRunning = true;
 
     @Override
     public IBinder onBind(Intent i) {
       return null;
+    }
+
+    public void onCreate() {
+      mThread = new Thread(runSyncthing);
+    }
+
+    public void onDestroy() {
+      mThreadRunning = false;
+      try {
+          mThread.interrupt();
+          mThread.destroy();
+      }
+      catch( Exception e ) { e.printStackTrace(); }
     }
 
     /**
@@ -58,27 +74,53 @@ public class SyncthingService extends Service {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-      System.err.println("started");
-      new Thread(bootSyncthing).start();
+      try { mThread.start(); } // ignore if running already
+      catch(Exception e) { e.printStackTrace(); }
       return START_STICKY;
     }
 
-    protected Runnable bootSyncthing = new Runnable() {
+    protected Runnable runSyncthing = new Runnable() {
       @Override
       public void run() {
          try {
-            File home = setupHome(getApplicationContext());
-            mProcess = startSyncthing(home);
+            //
+            // restart syncthing as long as there are socket timeouts to
+            // detect when syncthing is hanging.
+            //
+           while( mThreadRunning ) {
+              File home = setupHome(getApplicationContext());
+              mProcess = startSyncthing(home);
 
-            Intent apiKeyIntent = new Intent();
-            apiKeyIntent.setAction(ACTION_APIKEY);
-            apiKeyIntent.putExtra(EXTRA_APIKEY, getApiKey(home));
-            sendBroadcast(apiKeyIntent);
+              Intent apiKeyIntent = new Intent();
+              apiKeyIntent.setAction(ACTION_APIKEY);
+              apiKeyIntent.putExtra(EXTRA_APIKEY, getApiKey(home));
+              sendBroadcast(apiKeyIntent);
+
+              waitForSocketTimeout(10000);
+           }
         } catch (Exception e) {
             e.printStackTrace();
         }
       }
     };
+
+    protected void waitForSocketTimeout(int timeoutms) throws Exception{
+        while (true) try {
+            Thread.sleep(1000);
+
+            Socket s = new Socket();
+            s.connect(new java.net.InetSocketAddress(
+                      java.net.InetAddress.getByName("localhost"), 8384),
+                      timeoutms);
+            s.close();
+        } catch(java.net.SocketTimeoutException e) {
+            e.printStackTrace();
+            return;
+        } catch(java.net.ConnectException e) {
+            // e.g. connection refused during startup
+            e.printStackTrace();
+        }
+    }
 
     protected Process startSyncthing(File home) throws Exception {
         //

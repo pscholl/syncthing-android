@@ -71,7 +71,7 @@ public class MainActivity extends Activity {
         //
         // prep the volley queue
         //
-        mQueue = Volley.newRequestQueue(this); 
+        mQueue = Volley.newRequestQueue(this);
     }
 
     @Override
@@ -203,10 +203,10 @@ public class MainActivity extends Activity {
                 // restart syncthing on error, will call here again via
                 // the onApiKey() callback and schedule the next request
                 //
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() { startService(new Intent(MainActivity.this, SyncthingService.class));  }
-                }, RESTARTDELAY);
+                //handler.postDelayed(new Runnable() {
+                //    @Override
+                //    public void run() { startService(new Intent(MainActivity.this, SyncthingService.class));  }
+                //}, RESTARTDELAY);
             }
         }) {
         public Map<String, String> getHeaders() { return mHeaders; }
