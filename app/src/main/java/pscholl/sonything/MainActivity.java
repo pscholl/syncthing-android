@@ -28,23 +28,27 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.JsonArrayRequest;
 
+/**
+ * TODO replace json parser with something that does not use simpledateformat
+ *
+ * TODO show global/local file-stats, i.e. number of unsynced files
+ *
+ * TODO integrate fs watcher and hook with start and with:
+ *   https://docs.syncthing.net/rest/db-scan-post.html
+ *
+ * TODO enable wifi on application startup and fs watcher hook`
+ *
+ * TODO show battery stats
+ *  https://stackoverflow.com/questions/3291655/get-battery-level-and-state-in-android
+ *
+ */
+
 public class MainActivity extends Activity {
 
     protected boolean mUpdateUI = false;
     protected RequestQueue mQueue = null;
     protected Map<String, String> mHeaders = null;
     protected Map<String, String> mParams = null;
-
-    /**
-     * delay between request for status updates to syncthing. Do not make much
-     * faster, seem syncthing cannot handle that.
-     */
-    protected final long UPDATEDELAY = 10000;
-
-    /**
-     * timeout after a restart due to error
-     */
-    protected final long RESTARTDELAY = 20000;
 
     @Override
     protected void onDestroy() {
@@ -109,14 +113,111 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * schedules a REST/Volley request with delay.
+     * handles single syncthingEvents comming in from the REST api
      */
-    protected final Handler handler = new Handler();
-    protected void scheduleRequest(final JsonArrayRequest req, long delay) {
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() { mQueue.add(req); }
-        }, delay);
+    protected void onSyncThingEvent(JSONObject obj) {
+        try {
+          String type = obj.getString("type");
+          JSONObject data = obj.getJSONObject("data");
+
+          switch(type) {
+          case "FolderSummary":
+            onFolderSummary( data );
+            break;
+
+          case "FolderScanProgress":
+            onFolderScanProgress(data);
+            break;
+
+          case "RemoteDownloadProgress":
+            onRemoteDownloadProgress(data);
+            break;
+
+          default:
+            System.err.println(obj.toString());
+            break;
+          }
+        } catch(Exception e) {
+          e.printStackTrace();
+        }
+    }
+
+    /**
+     * {"state":{
+     *    "10601118\/DSC01117.JPG":17,
+     *    "10201114\/DSC00986.JPG":52},
+     *    "folder":"avwck-toq6i",
+     *    "device":"EVDARLQ-DHV2S6C-RSKAOFZ-V4TY42W-HCSTZSQ-ICYI5AI-EQRX35J-MNINJQY"},
+     */
+    protected void onRemoteDownloadProgress(JSONObject data) throws Exception {
+      TextView tv = (TextView) findViewById(R.id.latest_event);
+      JSONObject state = data.getJSONObject("state");
+
+      StringBuilder sb = new StringBuilder();
+      java.util.Iterator<String> x = state.keys();
+      while(x.hasNext()) {
+          String key = x.next();
+          int val = state.getInt(key);
+          sb.append(String.format( "%s - %d%%\n", key, val));
+      }
+
+      tv.setText(sb.toString());
+      tv.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * this looks like this:
+     *  {"total":12844105729,
+     *   "folder":"avwck-toq6i",
+     *   "current":69664768,
+     *   "rate":751814.812597032},
+     */
+    protected void onFolderScanProgress(JSONObject data) throws Exception {
+        TextView tv = (TextView) findViewById(R.id.throughput);
+        tv.setVisibility(View.VISIBLE);
+        tv.setText( getString(R.string.rate_text, data.getDouble("rate")) );
+
+        ProgressBar pb = (ProgressBar) findViewById(R.id.progressbar);
+        pb.setVisibility(View.VISIBLE);
+        pb.setProgress( (int) (data.getDouble("current") * 100 / data.getDouble("total")) );
+    }
+
+    /**
+     * update the Ui with the FolderSummary, which looks like:
+     *
+     * {"summary":{"localFiles":240,
+     *             "localDeleted":0,
+     *             "needDirectories":0,
+     *             "globalDeleted":0,
+     *             "state":"scanning",
+     *             "version":265,
+     *             "pullErrors":0,
+     *             "localTotalItems":265,
+     *             "inSyncBytes":2156498048,
+     *             "globalSymlinks":0,
+     *             "errors":0,
+     *             "invalid":"",
+     *             "globalTotalItems":265,
+     *             "globalBytes":2156498048,
+     *             "needSymlinks":0,
+     *             "stateChanged":"1970-01-01T00:58:52.174196002Z",
+     *             "needBytes":0,
+     *             "globalDirectories":25,
+     *             "needFiles":0,
+     *             "needTotalItems":0,
+     *             "globalFiles":240,
+     *             "ignorePatterns":false,
+     *             "sequence":265,
+     *             "localDirectories":25,
+     *             "localSymlinks":0,
+     *             "needDeletes":0,
+     *             "inSyncFiles":240,
+     *             "localBytes":2156498048},
+     *             "folder":"avwck-toq6i"}
+     */
+    protected void onFolderSummary(JSONObject data) throws Exception {
+        TextView tv = (TextView) findViewById(R.id.status);
+        tv.setText( data.getJSONObject("summary").getString("state") );
     }
 
     /**
@@ -139,20 +240,20 @@ public class MainActivity extends Activity {
     };
 
     /**
-     * handles single syncthingEvents comming in from the REST api
+     * schedules a REST/Volley request with delay.
      */
-    protected void onSyncThingEvent(JSONObject obj) {
-        System.err.println(obj.toString());
+    protected final Handler handler = new Handler();
+    protected void scheduleRequest(final JsonArrayRequest req, long delay) {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() { mQueue.add(req); }
+        }, delay);
     }
 
     /**
      * get a status update through the REST api and update the UI.
      *
      * see https://docs.syncthing.net/rest/events-get.html
-     *
-     * TODO remove UPDATEDELAY and schedule via the blocking of the rest API,
-     *      i.e. just keep on requesting, but add since parameter to request
-     *
      */
     protected JsonArrayRequest createEventRequest() {
       return new JsonArrayRequest(
@@ -175,13 +276,12 @@ public class MainActivity extends Activity {
                 catch (Exception e) { System.err.println(e); }
 
                 if (mUpdateUI)
-                    scheduleRequest(createEventRequest(), UPDATEDELAY);
+                    scheduleRequest(createEventRequest(), 0);
             }
         },
         new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError err) {
-
                 if (err instanceof com.android.volley.TimeoutError)
                   return; // ignore
 
@@ -190,23 +290,13 @@ public class MainActivity extends Activity {
                   sb.delete(80, err.toString().length()-80);
                 System.err.println(sb.toString());
 
-                // will be activated through onApiKey
-                //if (mUpdateUI)
-                //    scheduleRequest(onSyncthingEvents, RESTARTDELAY);
-
                 //
                 // reset the events we want to get
                 //
                 mParams.put( "since", Integer.toString(0) );
 
-                //
-                // restart syncthing on error, will call here again via
-                // the onApiKey() callback and schedule the next request
-                //
-                //handler.postDelayed(new Runnable() {
-                //    @Override
-                //    public void run() { startService(new Intent(MainActivity.this, SyncthingService.class));  }
-                //}, RESTARTDELAY);
+                if (mUpdateUI) // re-schedule with an error delay
+                    scheduleRequest(createEventRequest(), 5000);
             }
         }) {
         public Map<String, String> getHeaders() { return mHeaders; }

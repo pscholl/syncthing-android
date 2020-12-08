@@ -43,7 +43,7 @@
             android:text="" />
 
         <TextView
-            android:id="@+id/total_bytes"
+            android:id="@+id/latest_event"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
@@ -57,6 +57,7 @@
             android:id="@+id/button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:layout_gravity="center_horizontal"
             android:text="@string/sync_button_start" />
 

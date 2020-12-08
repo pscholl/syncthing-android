@@ -3,8 +3,9 @@
     <string name="status_not_syncing">not syncing</string>
     <string name="status_syncing">syncing</string>
     <string name="status_sync_starting">sync starting...</string>
-    <string name="sync_button_start">start synchronisation</string>
+    <string name="sync_button_start">open syncthing</string>
     <string name="sync_button_cancel">cancel synchronisation</string>
     <string name="notification_title">rsync\'ing</string>
     <string name="notification_text">syncing %1$s to %2$s</string>
+    <string name="rate_text">at %1$.2f b/s</string>
 </resources>
