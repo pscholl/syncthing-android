@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.DataOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -87,18 +88,19 @@ public class SyncthingService extends Service {
             // restart syncthing as long as there are socket timeouts to
             // detect when syncthing is hanging.
             //
-            // TODO sometimes the exec goes wrong, i.e. need to restart immediately then
-            //
            while( mThreadRunning ) {
               File home = setupHome(getApplicationContext());
-              mProcess = startSyncthing(home);
+
+              do { // sometime startup may fail
+                mProcess = startSyncthing(home);
+              } while ( !isRunning(mProcess, 500) );
 
               Intent apiKeyIntent = new Intent();
               apiKeyIntent.setAction(ACTION_APIKEY);
               apiKeyIntent.putExtra(EXTRA_APIKEY, getApiKey(home));
               sendBroadcast(apiKeyIntent);
 
-              waitForSocketTimeout(10000);
+              waitForSocketTimeout(60000);
            }
         } catch (Exception e) {
             e.printStackTrace();
@@ -106,19 +108,43 @@ public class SyncthingService extends Service {
       }
     };
 
+    /**
+     * checks if a Process is running after x ms
+     */
+    protected boolean isRunning(Process p, int timeoutms) {
+      try {
+          Thread.sleep(timeoutms);
+          p.exitValue();
+          return false;
+      } catch (Exception e) {
+          return true;
+      }
+    }
+
+    /**
+     * checks if syncthings hangs (it does not answer http reqs).
+     */
     protected void waitForSocketTimeout(int timeoutms) throws Exception{
+        Socket s = null;
+
         while (true) try {
             Thread.sleep(1000);
 
-            System.err.println("checking");
+            String req =
+              "GET / HTTP/1.1\n" +
+              "Host: localhost:8384\n\n";
 
-            Socket s = new Socket();
-            s.connect(new java.net.InetSocketAddress(
-                      java.net.InetAddress.getByName("localhost"), 8384),
-                      timeoutms);
+            s = new Socket("localhost", 8384);
+            s.setSoTimeout(timeoutms);
+            s.getOutputStream()
+             .write(req.getBytes("utf8"));
+            s.getInputStream()
+             .read();
+
             s.close();
         } catch(java.net.SocketTimeoutException e) {
             e.printStackTrace();
+            s.close();
             return;
         } catch(java.net.ConnectException e) {
             // e.g. connection refused during startup
@@ -131,17 +157,22 @@ public class SyncthingService extends Service {
         // execute libsyncthing.so in the home-directory
         //
         while (true) try {
-          System.err.println("executing ");
-          ProcessBuilder pb = new ProcessBuilder(
-              new File(home, "libsyncthing.so").toString(),
-              "-no-browser",
-              "-verbose",
-              "-logfile", "default",
-              "-home", home.toString());
+          String cmd = new StringBuilder()
+           .append( new File(home, "libsyncthing.so").toString() )
+           .append(" -no-browser")
+           .append(" -logfile default")
+           .append(" -home ")
+           .append(home.toString())
+           .append(" 2>&1 >/dev/null")
+           .toString();
 
+          ProcessBuilder pb =
+            new ProcessBuilder("sh", "-c", cmd);
 
           System.err.println("executing " + pb.command().toString());
+
           return pb.start();
+
         } catch (java.io.IOException e) {
           //
           // happens when mounting the fs was not fast enough
