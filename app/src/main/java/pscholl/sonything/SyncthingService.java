@@ -50,6 +50,7 @@ public class SyncthingService extends Service {
     protected Process mProcess = null;
     protected Thread mThread = null;
     protected boolean mThreadRunning = true;
+    protected File mHome = null;
 
     @Override
     public IBinder onBind(Intent i) {
@@ -76,8 +77,21 @@ public class SyncthingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
       try { mThread.start(); } // ignore if running already
-      catch(Exception e) { e.printStackTrace(); }
+      catch(Exception e) {
+        e.printStackTrace();
+        publishApiKey(mHome);
+      }
       return START_STICKY;
+    }
+
+    public void publishApiKey(File home) {
+      //
+      // publish the apikey after the start
+      //
+      Intent apiKeyIntent = new Intent();
+      apiKeyIntent.setAction(ACTION_APIKEY);
+      apiKeyIntent.putExtra(EXTRA_APIKEY, getApiKey(home));
+      sendBroadcast(apiKeyIntent);
     }
 
     protected Runnable runSyncthing = new Runnable() {
@@ -89,19 +103,18 @@ public class SyncthingService extends Service {
             // detect when syncthing is hanging.
             //
            while( mThreadRunning ) {
-              File home = setupHome(getApplicationContext());
+              mHome = setupHome(getApplicationContext());
 
               // first stop any running instance
+              System.err.println("stop");
               stopSyncthing();
 
+              System.err.println("start");
               do { // sometime startup may fail
-                mProcess = startSyncthing(home);
+                mProcess = startSyncthing(mHome);
               } while ( !isRunning(mProcess, 500) );
 
-              Intent apiKeyIntent = new Intent();
-              apiKeyIntent.setAction(ACTION_APIKEY);
-              apiKeyIntent.putExtra(EXTRA_APIKEY, getApiKey(home));
-              sendBroadcast(apiKeyIntent);
+              publishApiKey(mHome);
 
               // wait until syncthing is stopped or hangs, then restart
               waitForSocketTimeout(60000);
@@ -129,9 +142,11 @@ public class SyncthingService extends Service {
      * checks if syncthings hangs (it does not answer http reqs).
      */
     protected void waitForSocketTimeout(int timeoutms) throws Exception{
+        byte buffer[] = new byte[256];
         Socket s = null;
 
         while (true) try {
+            System.err.println("checking");
             Thread.sleep(1000);
 
             String req =
@@ -142,8 +157,10 @@ public class SyncthingService extends Service {
             s.setSoTimeout(timeoutms);
             s.getOutputStream()
              .write(req.getBytes("utf8"));
-            s.getInputStream()
-             .read();
+            int n = s.getInputStream()
+             .read(buffer);
+
+            System.err.println("got " + n);
 
             s.close();
         } catch(java.net.SocketTimeoutException e) {
@@ -168,6 +185,8 @@ public class SyncthingService extends Service {
                              new InputStreamReader(
                                p.getInputStream()));
 
+          System.err.println("got ps");
+
           //
           // ignore the header (first line), and then search for the PIDs
           //
@@ -181,9 +200,14 @@ public class SyncthingService extends Service {
             // this is hard-coded to the output of the "ps" command
             // on the specific android version, not very portable (XXX)
             //
-            String[] tokens = line.split(" ");
+            String[] tokens = line.split(" +");
             pids.add( Integer.parseInt(tokens[1]) );
           }
+
+          System.err.println("got " + pids.size() + " pids");
+
+          for (Integer pid : pids)
+            System.err.println("killing " + pid.toString());
 
           //
           // now kill all the found processes,
@@ -220,6 +244,10 @@ public class SyncthingService extends Service {
 
           ProcessBuilder pb =
             new ProcessBuilder("sh", "-c", cmd);
+
+          pb // limit to one cpu core
+            .environment()
+            .put("GOMAXPROCS", "1");
 
           System.err.println("executing " + pb.command().toString());
 
@@ -311,6 +339,7 @@ public class SyncthingService extends Service {
             new File(droid, home.getAbsolutePath()).getAbsolutePath());
 
         System.err.println("setup done");
+        Thread.sleep(1000); // XXX this is bad, but without every process started quickly afterwards hangs
 
         return home;
     }

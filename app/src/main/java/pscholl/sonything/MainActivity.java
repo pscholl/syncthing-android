@@ -15,6 +15,7 @@ import android.os.Handler;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -119,6 +120,7 @@ public class MainActivity extends Activity {
         try {
           String type = obj.getString("type");
           JSONObject data = obj.getJSONObject("data");
+          System.err.println("got update " + type);
 
           switch(type) {
           case "FolderSummary":
@@ -133,6 +135,10 @@ public class MainActivity extends Activity {
             onRemoteDownloadProgress(data);
             break;
 
+          case "FolderCompletion":
+            onFolderCompletion(data);
+            break;
+
           default:
             System.err.println(obj.toString());
             break;
@@ -140,6 +146,56 @@ public class MainActivity extends Activity {
         } catch(Exception e) {
           e.printStackTrace();
         }
+    }
+
+
+    /** 
+     * {"folder":"avwck-toq6i",
+     *  "needItems":1058,
+     *  "globalBytes":13745786752,
+     *  "globalItems":1585,
+     *  "sequence":527,
+     *  "device":"EVDARLQ-DHV2S6C-RSKAOFZ-V4TY42W-HCSTZSQ-ICYI5AI-EQRX35J-MNINJQY",
+     *  "needBytes":9260400640,
+     *  "needDeletes":0,
+     *  "completion":32.63098862891483},
+     */
+    protected LinkedHashMap<String, LinkedHashMap<String, JSONObject>> completion 
+              = new LinkedHashMap<String, LinkedHashMap<String, JSONObject>>();
+
+    protected void onFolderCompletion(JSONObject data) throws Exception {
+        //
+        // did we see the folder before?
+        //
+        if (!completion.containsKey( data.getString("folder") )) {
+            completion.put( data.getString("folder"),
+                            new LinkedHashMap<String, JSONObject>() );
+        }
+
+        //
+        // update the data
+        //
+        completion
+           .get(data.getString("folder"))
+           .put(data.getString("device"), data);
+
+        //
+        // update the textview
+        //
+        StringBuilder sb = new StringBuilder();
+        for(LinkedHashMap<String, JSONObject> val : completion.values())
+            for(JSONObject folder : val.values())
+                sb.append(
+                    getString(R.string.folder_text,
+                        folder.getString("folder"),
+                        folder.getInt("needItems"),
+                        folder.getInt("globalItems"),
+                        folder.getDouble("completion")));
+
+        TextView tv = (TextView) findViewById(R.id.folders);
+        tv.setVisibility(View.VISIBLE);
+        tv.setText(sb.toString());
+
     }
 
     /**
