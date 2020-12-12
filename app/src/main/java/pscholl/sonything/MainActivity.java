@@ -29,8 +29,6 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.JsonArrayRequest;
 
 /**
- * TODO replace json parser with something that does not use simpledateformat
- *
  * TODO show global/local file-stats, i.e. number of unsynced files
  *
  * TODO integrate fs watcher and hook with start and with:
@@ -40,6 +38,8 @@ import com.android.volley.toolbox.JsonArrayRequest;
  *
  * TODO show battery stats
  *  https://stackoverflow.com/questions/3291655/get-battery-level-and-state-in-android
+ *
+ * TODO replace json parser with something that does not use simpledateformat
  *
  */
 

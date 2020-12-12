@@ -91,6 +91,9 @@ public class SyncthingService extends Service {
            while( mThreadRunning ) {
               File home = setupHome(getApplicationContext());
 
+              // first stop any running instance
+              stopSyncthing();
+
               do { // sometime startup may fail
                 mProcess = startSyncthing(home);
               } while ( !isRunning(mProcess, 500) );
@@ -100,6 +103,7 @@ public class SyncthingService extends Service {
               apiKeyIntent.putExtra(EXTRA_APIKEY, getApiKey(home));
               sendBroadcast(apiKeyIntent);
 
+              // wait until syncthing is stopped or hangs, then restart
               waitForSocketTimeout(60000);
            }
         } catch (Exception e) {
@@ -150,6 +154,54 @@ public class SyncthingService extends Service {
             // e.g. connection refused during startup
             e.printStackTrace();
         }
+    }
+
+    protected void stopSyncthing() {
+      try {
+          //
+          // find all running processes of libsyncthing.so,
+          // through calling ps and parsing them for the PID
+          //
+          LinkedList<Integer> pids = new LinkedList<Integer>();
+          Process p = new ProcessBuilder("ps").start();
+          BufferedReader r = new BufferedReader(
+                             new InputStreamReader(
+                               p.getInputStream()));
+
+          //
+          // ignore the header (first line), and then search for the PIDs
+          //
+          String line = r.readLine();
+          while ( (line = r.readLine()) != null ) {
+
+            if (!line.contains("syncthing"))
+              continue;
+
+            //
+            // this is hard-coded to the output of the "ps" command
+            // on the specific android version, not very portable (XXX)
+            //
+            String[] tokens = line.split(" ");
+            pids.add( Integer.parseInt(tokens[1]) );
+          }
+
+          //
+          // now kill all the found processes,
+          // 1. TERM signal to all PIDs
+          // 1. wait for 1000ms
+          // 1. KILL signal to all PIDs (for those remaining
+          //
+          for (Integer pid : pids)
+            new ProcessBuilder("kill " + pid.toString()).start();
+
+          Thread.sleep(1000);
+
+          for (Integer pid : pids)
+            new ProcessBuilder("kill -9 " + pid.toString()).start();
+
+      } catch(Exception e) {
+          e.printStackTrace();
+      }
     }
 
     protected Process startSyncthing(File home) throws Exception {
