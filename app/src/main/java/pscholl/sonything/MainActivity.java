@@ -34,10 +34,9 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.text.format.Formatter;
+import android.content.SharedPreferences;
 
 /**
- * TODO enable/disable button
- *
  * TODO integrate fs watcher and hook with start and with:
  *   https://docs.syncthing.net/rest/db-scan-post.html
  *
@@ -57,6 +56,10 @@ public class MainActivity extends Activity {
 
     protected ConnectivityManager mConnectivityManager;
     protected WifiManager mWifiManager;
+
+    protected SharedPreferences mPreferences;
+
+    public final String IS_SYNCING_KEY = "IS_SYCNING";
 
     @Override
     protected void onDestroy() {
@@ -98,15 +101,22 @@ public class MainActivity extends Activity {
         mUpdateUI = true;
 
         //
-        // this (re-)starts syncthing
+        // get current state of syncthing
         //
-        startService(new Intent(this, SyncthingService.class));
+        mPreferences = getSharedPreferences(
+            getString(R.string.preference_file_key),
+            Context.MODE_PRIVATE);
 
         //
-        // enable wifi and register receiver
+        // onButtonClick() controls the start/stop of syncthing, and wifi!
         //
-        mWifiManager.setWifiEnabled(true);
+        Button b = findViewById(R.id.button);
+        b.setOnClickListener(onButtonClick);
+        onButtonClick.onClick(null);
 
+        //
+        // register wifi receiver
+        //
         IntentFilter f = new IntentFilter();
         f.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         f.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
@@ -123,6 +133,39 @@ public class MainActivity extends Activity {
         mUpdateUI = false;
         unregisterReceiver(mWifiReceiver);
     }
+
+    protected View.OnClickListener onButtonClick = new View.OnClickListener() {
+        /**
+         * toggle the sharedpreferences state of syncthing.
+         */
+        public void onClick(View v) {
+            boolean is_syncing = mPreferences.getBoolean(IS_SYNCING_KEY, true);
+
+            //
+            // this is just for initialization
+            //
+            if (v != null)
+                is_syncing = !is_syncing;
+
+            SharedPreferences.Editor editor = mPreferences.edit();
+            editor.putBoolean(IS_SYNCING_KEY, is_syncing);
+            editor.apply();
+
+            Button b = (Button) findViewById(R.id.button);
+            b.setText(is_syncing ?
+                      R.string.sync_disable :
+                      R.string.sync_enable );
+
+            //
+            // also start/stop syncthing and wifi here
+            //
+            Intent i = new Intent(MainActivity.this, SyncthingService.class);
+            if (is_syncing) startService(i);
+            else stopService(i);
+
+            mWifiManager.setWifiEnabled(is_syncing);
+        }
+    };
 
     protected BroadcastReceiver mWifiReceiver = new BroadcastReceiver() {
         /**

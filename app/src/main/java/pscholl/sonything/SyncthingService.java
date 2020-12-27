@@ -10,6 +10,7 @@ import android.content.pm.PackageInfo;
 import android.content.Intent;
 import android.app.Service;
 import android.os.IBinder;
+import android.os.Handler;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -49,7 +50,7 @@ public class SyncthingService extends Service {
     public final static String EXTRA_APIKEY = "extra_apikey";
     protected Process mProcess = null;
     protected Thread mThread = null;
-    protected boolean mThreadRunning = true;
+    protected volatile boolean mThreadRunning = true;
     protected File mHome = null;
 
     @Override
@@ -62,11 +63,15 @@ public class SyncthingService extends Service {
     }
 
     public void onDestroy() {
+      //
+      // stop the running
+      //
       mThreadRunning = false;
-      try {
-          mThread.interrupt();
-          mThread.destroy();
-      }
+
+      //
+      // interrupt any on-going waits
+      //
+      try { mThread.interrupt(); }
       catch( Exception e ) { e.printStackTrace(); }
     }
 
@@ -106,7 +111,6 @@ public class SyncthingService extends Service {
               mHome = setupHome(getApplicationContext());
 
               // first stop any running instance
-              System.err.println("stop");
               stopSyncthing();
 
               System.err.println("start");
@@ -122,6 +126,12 @@ public class SyncthingService extends Service {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        //
+        // if we end up here, a graceful exit should happen, i.e.
+        // signal syncthing to stop
+        //
+        stopSyncthing();
       }
     };
 
@@ -174,6 +184,8 @@ public class SyncthingService extends Service {
     }
 
     protected void stopSyncthing() {
+      System.err.println("stop");
+
       try {
           //
           // find all running processes of libsyncthing.so,
@@ -216,12 +228,12 @@ public class SyncthingService extends Service {
           // 1. KILL signal to all PIDs (for those remaining
           //
           for (Integer pid : pids)
-            new ProcessBuilder("kill " + pid.toString()).start();
+            Shell.exec("kill " + pid.toString());
 
           Thread.sleep(1000);
 
           for (Integer pid : pids)
-            new ProcessBuilder("kill -9 " + pid.toString()).start();
+            Shell.exec("kill -9 " + pid.toString());
 
       } catch(Exception e) {
           e.printStackTrace();
@@ -236,6 +248,7 @@ public class SyncthingService extends Service {
           String cmd = new StringBuilder()
            .append( new File(home, "libsyncthing.so").toString() )
            .append(" -no-browser")
+           .append(" -no-restart")
            .append(" -logfile default")
            .append(" -home ")
            .append(home.toString())

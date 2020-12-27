@@ -78,9 +78,8 @@
             android:id="@+id/button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
             android:layout_gravity="center_horizontal"
-            android:text="@string/sync_button_start" />
+            android:text="@string/sync_disable" />
 
     </LinearLayout>
 
