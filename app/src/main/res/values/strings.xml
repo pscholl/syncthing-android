@@ -9,4 +9,10 @@
     <string name="notification_text">syncing %1$s to %2$s</string>
     <string name="rate_text">at %1$.2f b/s</string>
     <string name="folder_text">%1$s (%2$d/%3$d) completed %4$.2f%%</string>
+    <string name="wifi_disabled">Wifi disabled</string>
+    <string name="wifi_enabled">Wifi enabled</string>
+    <string name="wifi_enabling">Wifi enabling</string>
+    <string name="wifi_connected">connected to %s (ip: %s)</string>
+    <string name="wifi_scanning">Wifi scanning...</string>
+    <string name="wifi_connecting">Wifi connecting...</string>
 </resources>

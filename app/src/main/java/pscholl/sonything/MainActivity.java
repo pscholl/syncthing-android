@@ -29,13 +29,17 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.JsonArrayRequest;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.text.format.Formatter;
+
 /**
- * TODO show global/local file-stats, i.e. number of unsynced files
+ * TODO enable/disable button
  *
  * TODO integrate fs watcher and hook with start and with:
  *   https://docs.syncthing.net/rest/db-scan-post.html
- *
- * TODO enable wifi on application startup and fs watcher hook`
  *
  * TODO show battery stats
  *  https://stackoverflow.com/questions/3291655/get-battery-level-and-state-in-android
@@ -50,6 +54,9 @@ public class MainActivity extends Activity {
     protected RequestQueue mQueue = null;
     protected Map<String, String> mHeaders = null;
     protected Map<String, String> mParams = null;
+
+    protected ConnectivityManager mConnectivityManager;
+    protected WifiManager mWifiManager;
 
     @Override
     protected void onDestroy() {
@@ -77,6 +84,13 @@ public class MainActivity extends Activity {
         // prep the volley queue
         //
         mQueue = Volley.newRequestQueue(this);
+
+        //
+        // setup wifi and event receiver
+        //
+        mConnectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        mWifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
     }
 
     @Override
@@ -88,14 +102,69 @@ public class MainActivity extends Activity {
         //
         startService(new Intent(this, SyncthingService.class));
 
+        //
+        // enable wifi and register receiver
+        //
+        mWifiManager.setWifiEnabled(true);
+
+        IntentFilter f = new IntentFilter();
+        f.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        f.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
+        f.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        registerReceiver(mWifiReceiver, f);
+
         super.onResume();
     }
 
     @Override
     protected void onPause() {
-        mUpdateUI = false;
         super.onPause();
+
+        mUpdateUI = false;
+        unregisterReceiver(mWifiReceiver);
     }
+
+    protected BroadcastReceiver mWifiReceiver = new BroadcastReceiver() {
+        /**
+         * update the wifi status accordingly
+         */
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            TextView tv = findViewById(R.id.wifi);
+
+            switch (mWifiManager.getWifiState()) {
+            case WifiManager.WIFI_STATE_ENABLED:
+                NetworkInfo networkInfo = mConnectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+                WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+
+                if (networkInfo.isConnected()) {
+                    tv.setText(getString(
+                          R.string.wifi_connected,
+                          wifiInfo.getSSID(),
+                          Formatter.formatIpAddress(wifiInfo.getIpAddress())));
+                } else {
+                    NetworkInfo.DetailedState state = WifiInfo.getDetailedStateOf(wifiInfo.getSupplicantState());
+                    switch (state) {
+                    case SCANNING:
+                        tv.setText(R.string.wifi_scanning);
+                    case AUTHENTICATING:
+                    case CONNECTING:
+                    case OBTAINING_IPADDR:
+                        tv.setText(R.string.wifi_connecting);
+                    default:
+                        tv.setText(R.string.wifi_enabled);
+                    }
+                }
+                break;
+            case WifiManager.WIFI_STATE_ENABLING:
+                tv.setText(R.string.wifi_enabling);
+                break;
+            default:
+                tv.setText(R.string.wifi_disabled);
+                break;
+            }
+        }
+    };
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {

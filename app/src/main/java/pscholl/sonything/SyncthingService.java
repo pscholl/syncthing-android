@@ -147,7 +147,7 @@ public class SyncthingService extends Service {
 
         while (true) try {
             System.err.println("checking");
-            Thread.sleep(1000);
+            Thread.sleep(10000);
 
             String req =
               "GET / HTTP/1.1\n" +
