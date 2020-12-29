@@ -30,18 +30,12 @@
         <service
             android:name=".SyncthingService"/>
 
-        <!--
-        <service
-            android:name=".ObserverService" />
-
-        <receiver
-            android:name=".MainReceiver">
+       <receiver
+            android:name=".BootCompletedReceiver" >
             <intent-filter>
-                <action android:name="ACTION_SDCARD_UPDATED"/>
-                <action android:name="ACTION_RSYNC_EXIT"/>
-                <action android:name="android.net.wifi.STATE_CHANGE"/>
+                <action android:name="com.android.server.DAConnectionManagerService.BootCompleted" />
+                <category android:name="ANDROID.INTENT.CATEGORY.DEFAULT" />
             </intent-filter>
         </receiver>
-        -->
     </application>
 </manifest>

@@ -37,10 +37,6 @@ import android.text.format.Formatter;
 import android.content.SharedPreferences;
 
 /**
- * TODO wifi on sony alpha 6k goes into scanning loop after some time, re-enabling helps (maybe after unsuccesful scan?)
- *
- * TODO use https://github.com/ma1co/PMCADemo/blob/master/app/src/main/java/com/github/ma1co/pmcademo/app/BootCompletedReceiver.java
- *
  * TODO integrate newest image query watcher and hook with start and with:
  * https://github.com/ma1co/OpenMemories-Framework
  * import com.github.ma1co.openmemories.framework.ImageInfo;
@@ -53,8 +49,6 @@ import android.content.SharedPreferences;
  * }
  * cursor.close();
  *   https://docs.syncthing.net/rest/db-scan-post.html
- *
- * TODO hook into global key events to get shutter key press?
  *
  * TODO show battery stats
  *  https://stackoverflow.com/questions/3291655/get-battery-level-and-state-in-android
@@ -75,7 +69,7 @@ public class MainActivity extends Activity {
 
     protected SharedPreferences mPreferences;
 
-    public final String IS_SYNCING_KEY = "IS_SYCNING";
+    public static final String IS_SYNCING_KEY = "IS_SYCNING";
 
     @Override
     protected void onDestroy() {
@@ -137,6 +131,7 @@ public class MainActivity extends Activity {
         f.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         f.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
         f.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        f.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         registerReceiver(mWifiReceiver, f);
 
         super.onResume();
@@ -195,6 +190,13 @@ public class MainActivity extends Activity {
         }
     };
 
+
+    //
+    // on the Sony Alpha 6k, wifi gets into a loop of not re-connected after some time,
+    // wifi will just scan but is unable to reconnect to the same network. If we detected
+    // a failed connection attempt, wifi will be re-enabled here.
+    //
+    protected boolean mWifiReenable = false;
     protected BroadcastReceiver mWifiReceiver = new BroadcastReceiver() {
         /**
          * update the wifi status accordingly
@@ -224,15 +226,29 @@ public class MainActivity extends Activity {
                     case OBTAINING_IPADDR:
                         tv.setText(R.string.wifi_connecting);
                         break;
+                    case FAILED:
+                    case SUSPENDED:
+                    case DISCONNECTED:
+                        mWifiReenable = true;
+                        mWifiManager.setWifiEnabled(false);
+                        break;
                     default:
                         tv.setText(R.string.wifi_enabled);
                         break;
                     }
+
+                    tv.setText(state.name());
                 }
                 break;
             case WifiManager.WIFI_STATE_ENABLING:
                 tv.setText(R.string.wifi_enabling);
                 break;
+            case WifiManager.WIFI_STATE_DISABLED:
+                if (mWifiReenable) {
+                    mWifiReenable = false;
+                    mWifiManager.setWifiEnabled(true);
+                    break;
+                }
             default:
                 tv.setText(R.string.wifi_disabled);
                 break;
@@ -456,6 +472,8 @@ public class MainActivity extends Activity {
      * see https://docs.syncthing.net/rest/events-get.html
      */
     protected JsonArrayRequest createEventRequest() {
+      System.err.println("check events for " + mParams.get("since"));
+
       return new JsonArrayRequest(
         Request.Method.GET,
         "http://localhost:8384/rest/events?since="+mParams.get("since"),
@@ -473,7 +491,7 @@ public class MainActivity extends Activity {
                   // update the 'since' getParam to filter events
                   // to only those that have not been seen
                   //
-                  mParams.put( "since", obj.getString( "globalID" ) );
+                  mParams.put( "since", obj.getString( "id" ) );
 
                   //
                   // propagate event through UI updates

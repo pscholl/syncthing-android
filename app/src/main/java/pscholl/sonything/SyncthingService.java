@@ -254,7 +254,7 @@ public class SyncthingService extends Service {
           String cmd = new StringBuilder()
            .append( new File(home, "libsyncthing.so").toString() )
            .append(" -no-browser")
-           .append(" -no-restart")
+           //.append(" -no-restart")
            .append(" -logfile default")
            .append(" -home ")
            .append(home.toString())
