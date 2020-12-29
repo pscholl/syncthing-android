@@ -37,12 +37,24 @@ import android.text.format.Formatter;
 import android.content.SharedPreferences;
 
 /**
- * TODO update id seems to mismatch (try restarting the UI to see effect), the updates from the REST API seem to get stuck
- *
  * TODO wifi on sony alpha 6k goes into scanning loop after some time, re-enabling helps (maybe after unsuccesful scan?)
  *
- * TODO integrate fs watcher and hook with start and with:
+ * TODO use https://github.com/ma1co/PMCADemo/blob/master/app/src/main/java/com/github/ma1co/pmcademo/app/BootCompletedReceiver.java
+ *
+ * TODO integrate newest image query watcher and hook with start and with:
+ * https://github.com/ma1co/OpenMemories-Framework
+ * import com.github.ma1co.openmemories.framework.ImageInfo;
+ * import com.github.ma1co.openmemories.framework.MediaManager;
+ * MediaManager mediaManager = MediaManager.create(getApplicationContext());
+ * Cursor cursor = mediaManager.queryNewestImages();
+ * while (cursor.moveToNext()) {
+ *     ImageInfo info = mediaManager.getImageInfo(cursor);
+ *     String filename = info.getFilename();
+ * }
+ * cursor.close();
  *   https://docs.syncthing.net/rest/db-scan-post.html
+ *
+ * TODO hook into global key events to get shutter key press?
  *
  * TODO show battery stats
  *  https://stackoverflow.com/questions/3291655/get-battery-level-and-state-in-android
@@ -134,8 +146,19 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
 
+        //
+        // stop updating the UI, and wifi updates
+        //
         mUpdateUI = false;
         unregisterReceiver(mWifiReceiver);
+
+        //
+        // also cancel any pending requests
+        //
+        mQueue.cancelAll(new RequestQueue.RequestFilter() {
+            @Override
+            public boolean apply(Request<?> request) { return true; }
+        });
     }
 
     protected View.OnClickListener onButtonClick = new View.OnClickListener() {
@@ -441,17 +464,27 @@ public class MainActivity extends Activity {
             @Override
             public void onResponse(JSONArray arr) {
                 for (int i = 0; i < arr.length(); i++) try {
+                  //
+                  // parse current event
+                  //
                   JSONObject obj = arr.getJSONObject(i);
-                  onSyncThingEvent(obj);
 
                   //
                   // update the 'since' getParam to filter events
                   // to only those that have not been seen
                   //
                   mParams.put( "since", obj.getString( "globalID" ) );
+
+                  //
+                  // propagate event through UI updates
+                  //
+                  onSyncThingEvent(obj);
                 }
                 catch (Exception e) { System.err.println(e); }
 
+                //
+                // if we are still updating the UI schedule the next request
+                //
                 if (mUpdateUI)
                     scheduleRequest(createEventRequest(), 0);
             }
