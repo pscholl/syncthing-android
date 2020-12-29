@@ -8,6 +8,8 @@ A wrapper of [Syncthing](https://github.com/syncthing/syncthing) for really old 
 
 # for building on SONY pmca
 
+Make sure to set the max-folder concurrency to something low (like 2).
+
 1) remove any references to android_log_printf, and dlopen/dlclose etc. in /usr/lib/go/src/runtime/cgo/gcc_android.c
    Otherwise a static binary can not be built. or apply patch < gcc_android_v9.patch
 

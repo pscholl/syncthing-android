@@ -37,6 +37,10 @@ import android.text.format.Formatter;
 import android.content.SharedPreferences;
 
 /**
+ * TODO update id seems to mismatch (try restarting the UI to see effect), the updates from the REST API seem to get stuck
+ *
+ * TODO wifi on sony alpha 6k goes into scanning loop after some time, re-enabling helps (maybe after unsuccesful scan?)
+ *
  * TODO integrate fs watcher and hook with start and with:
  *   https://docs.syncthing.net/rest/db-scan-post.html
  *
@@ -163,7 +167,8 @@ public class MainActivity extends Activity {
             if (is_syncing) startService(i);
             else stopService(i);
 
-            mWifiManager.setWifiEnabled(is_syncing);
+            if (is_syncing)
+                mWifiManager.setWifiEnabled(is_syncing);
         }
     };
 
@@ -190,12 +195,15 @@ public class MainActivity extends Activity {
                     switch (state) {
                     case SCANNING:
                         tv.setText(R.string.wifi_scanning);
+                        break;
                     case AUTHENTICATING:
                     case CONNECTING:
                     case OBTAINING_IPADDR:
                         tv.setText(R.string.wifi_connecting);
+                        break;
                     default:
                         tv.setText(R.string.wifi_enabled);
+                        break;
                     }
                 }
                 break;
@@ -347,7 +355,8 @@ public class MainActivity extends Activity {
 
         ProgressBar pb = (ProgressBar) findViewById(R.id.progressbar);
         pb.setVisibility(View.VISIBLE);
-        pb.setProgress( (int) (data.getDouble("current") * 100 / data.getDouble("total")) );
+        int progress = (int) (data.getDouble("current") * 100 / data.getDouble("total"));
+        pb.setProgress( progress );
     }
 
     /**

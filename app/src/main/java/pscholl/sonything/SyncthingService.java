@@ -113,7 +113,6 @@ public class SyncthingService extends Service {
               // first stop any running instance
               stopSyncthing();
 
-              System.err.println("start");
               do { // sometime startup may fail
                 mProcess = startSyncthing(mHome);
               } while ( !isRunning(mProcess, 500) );
@@ -192,11 +191,14 @@ public class SyncthingService extends Service {
           // through calling ps and parsing them for the PID
           //
           LinkedList<Integer> pids = new LinkedList<Integer>();
-          Process p = new ProcessBuilder("ps").start();
+          Process p = new ProcessBuilder()
+            .command("/system/bin/ps")
+            .directory(new File("/"))
+            .start();
+          System.err.println("start ps");
           BufferedReader r = new BufferedReader(
                              new InputStreamReader(
                                p.getInputStream()));
-
           System.err.println("got ps");
 
           //
@@ -215,6 +217,8 @@ public class SyncthingService extends Service {
             String[] tokens = line.split(" +");
             pids.add( Integer.parseInt(tokens[1]) );
           }
+
+          r.close();
 
           System.err.println("got " + pids.size() + " pids");
 
@@ -244,6 +248,8 @@ public class SyncthingService extends Service {
         //
         // execute libsyncthing.so in the home-directory
         //
+        System.err.println("start");
+
         while (true) try {
           String cmd = new StringBuilder()
            .append( new File(home, "libsyncthing.so").toString() )
@@ -258,9 +264,13 @@ public class SyncthingService extends Service {
           ProcessBuilder pb =
             new ProcessBuilder("sh", "-c", cmd);
 
-          pb // limit to one cpu core
-            .environment()
-            .put("GOMAXPROCS", "1");
+          //
+          // limit to one core, and aggressive garbage collection.
+          // 15% GC from experimentation, lower is too slow, higher
+          // results in a camera reset since no mem is left.
+          //
+          pb.environment().put("GOGC", "15");
+          pb.environment().put("GOMAXPROCS", "1");
 
           System.err.println("executing " + pb.command().toString());
 
@@ -341,7 +351,7 @@ public class SyncthingService extends Service {
 
         home.mkdir();
         int pid = android.os.Process.myPid();
-        Shell.exec("e2fsck -p " +
+        Shell.exec("e2fsck -y " +
             new File(droid, ext2.getAbsolutePath()).getAbsolutePath());
         Shell.exec("mount -o loop -t ext2 " +
             new File(droid, ext2.getAbsolutePath()).getAbsolutePath() + " " +
