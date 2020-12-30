@@ -279,7 +279,6 @@ public class MainActivity extends Activity {
         try {
           String type = obj.getString("type");
           JSONObject data = obj.getJSONObject("data");
-          System.err.println("got update " + type);
 
           switch(type) {
           case "FolderSummary":
@@ -434,6 +433,17 @@ public class MainActivity extends Activity {
     protected void onFolderSummary(JSONObject data) throws Exception {
         TextView tv = (TextView) findViewById(R.id.status);
         tv.setText( data.getJSONObject("summary").getString("state") );
+
+        //
+        // once we are idle, replace all scan progress status display
+        //
+        if ( "idle".equals(data.getJSONObject("summary").getString("state")) ) {
+            findViewById(R.id.throughput)
+              .setVisibility(View.GONE);
+
+            findViewById(R.id.progressbar)
+              .setVisibility(View.GONE);
+        }
     }
 
     /**
@@ -472,8 +482,6 @@ public class MainActivity extends Activity {
      * see https://docs.syncthing.net/rest/events-get.html
      */
     protected JsonArrayRequest createEventRequest() {
-      System.err.println("check events for " + mParams.get("since"));
-
       return new JsonArrayRequest(
         Request.Method.GET,
         "http://localhost:8384/rest/events?since="+mParams.get("since"),

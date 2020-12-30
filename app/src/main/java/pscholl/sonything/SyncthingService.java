@@ -169,8 +169,6 @@ public class SyncthingService extends Service {
             int n = s.getInputStream()
              .read(buffer);
 
-            System.err.println("got " + n);
-
             s.close();
         } catch(java.net.SocketTimeoutException e) {
             e.printStackTrace();
