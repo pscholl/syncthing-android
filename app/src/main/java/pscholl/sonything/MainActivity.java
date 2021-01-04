@@ -37,19 +37,6 @@ import android.text.format.Formatter;
 import android.content.SharedPreferences;
 
 /**
- * TODO integrate newest image query watcher and hook with start and with:
- * https://github.com/ma1co/OpenMemories-Framework
- * import com.github.ma1co.openmemories.framework.ImageInfo;
- * import com.github.ma1co.openmemories.framework.MediaManager;
- * MediaManager mediaManager = MediaManager.create(getApplicationContext());
- * Cursor cursor = mediaManager.queryNewestImages();
- * while (cursor.moveToNext()) {
- *     ImageInfo info = mediaManager.getImageInfo(cursor);
- *     String filename = info.getFilename();
- * }
- * cursor.close();
- *   https://docs.syncthing.net/rest/db-scan-post.html
- *
  * TODO show battery stats
  *  https://stackoverflow.com/questions/3291655/get-battery-level-and-state-in-android
  *
@@ -181,7 +168,8 @@ public class MainActivity extends Activity {
             //
             // also start/stop syncthing and wifi here
             //
-            Intent i = new Intent(MainActivity.this, SyncthingService.class);
+            //Intent i = new Intent(MainActivity.this, SyncthingService.class);
+            Intent i = new Intent(MainActivity.this, MediaWatcherService.class);
             if (is_syncing) startService(i);
             else stopService(i);
 

@@ -38,7 +38,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import android.os.Environment;
 
-/** Job Handler for syncthing.
+/** Job Handler for syncthing and Media Watcher.
  *
  * Setups a working directory for syncthing on the the sd-card and start sycnthing.
  * The setup requires a loop-mount on the sd-card, hence a root hack is
@@ -48,10 +48,11 @@ public class SyncthingService extends Service {
 
     public final static String ACTION_APIKEY = "action_apikey";
     public final static String EXTRA_APIKEY = "extra_apikey";
+    protected volatile boolean mThreadRunning = true;
     protected Process mProcess = null;
     protected Thread mThread = null;
-    protected volatile boolean mThreadRunning = true;
     protected File mHome = null;
+    protected Handler mHandler = null;
 
     @Override
     public IBinder onBind(Intent i) {
@@ -59,6 +60,9 @@ public class SyncthingService extends Service {
     }
 
     public void onCreate() {
+      //
+      // for monitoring the syncthing process
+      //
       mThread = new Thread(runSyncthing);
     }
 

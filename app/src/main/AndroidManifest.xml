@@ -30,6 +30,9 @@
         <service
             android:name=".SyncthingService"/>
 
+        <service
+            android:name=".MediaWatcherService"/>
+
        <receiver
             android:name=".BootCompletedReceiver" >
             <intent-filter>
