@@ -85,6 +85,14 @@ public class SyncthingService extends Service {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+      //
+      // also start the mediawatcher here
+      //
+      startService(new Intent(this, MediaWatcherService.class));
+
+      //
+      // now start the mainthread
+      //
       try { mThread.start(); } // ignore if running already
       catch(Exception e) {
         e.printStackTrace();

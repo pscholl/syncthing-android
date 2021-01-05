@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
 
     protected SharedPreferences mPreferences;
 
-    public static final String IS_SYNCING_KEY = "IS_SYCNING";
+    public static final String IS_SYNCING_KEY = "IS_SYNCING";
 
     @Override
     protected void onDestroy() {
@@ -168,8 +168,7 @@ public class MainActivity extends Activity {
             //
             // also start/stop syncthing and wifi here
             //
-            //Intent i = new Intent(MainActivity.this, SyncthingService.class);
-            Intent i = new Intent(MainActivity.this, MediaWatcherService.class);
+            Intent i = new Intent(MainActivity.this, SyncthingService.class);
             if (is_syncing) startService(i);
             else stopService(i);
 
