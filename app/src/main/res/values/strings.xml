@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Sony Alpha Rsync</string>
+    <string name="app_name">Syncthing for Sony Alpha</string>
     <string name="status_not_syncing">not syncing</string>
     <string name="status_syncing">syncing</string>
     <string name="status_sync_starting">sync starting...</string>
