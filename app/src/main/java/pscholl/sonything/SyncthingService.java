@@ -49,7 +49,6 @@ public class SyncthingService extends Service {
     public final static String ACTION_APIKEY = "action_apikey";
     public final static String EXTRA_APIKEY = "extra_apikey";
     protected volatile boolean mThreadRunning = true;
-    protected Process mProcess = null;
     protected Thread mThread = null;
     protected File mHome = null;
     protected Handler mHandler = null;
@@ -75,7 +74,10 @@ public class SyncthingService extends Service {
       //
       // interrupt any on-going waits
       //
-      try { mThread.interrupt(); }
+      try {
+        mThread.interrupt();
+        mThread.wait();
+      }
       catch( Exception e ) { e.printStackTrace(); }
     }
 
@@ -121,19 +123,19 @@ public class SyncthingService extends Service {
             //
            while( mThreadRunning ) {
               mHome = setupHome(getApplicationContext());
-
-              // first stop any running instance
-              stopSyncthing();
-
-              do { // sometime startup may fail
-                mProcess = startSyncthing(mHome);
-              } while ( !isRunning(mProcess, 500) );
-
               publishApiKey(mHome);
 
-              // wait until syncthing is stopped or hangs, then restart
+              // if it is not there already, start it now
+              if (getSyncthingPids().size() == 0)
+                startSyncthing(mHome);
+
+              // might still be there from another instance
               waitForSocketTimeout(60000);
+
+              // kill all running instance
+              stopSyncthing();
            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -147,19 +149,6 @@ public class SyncthingService extends Service {
     };
 
     /**
-     * checks if a Process is running after x ms
-     */
-    protected boolean isRunning(Process p, int timeoutms) {
-      try {
-          Thread.sleep(timeoutms);
-          p.exitValue();
-          return false;
-      } catch (Exception e) {
-          return true;
-      }
-    }
-
-    /**
      * checks if syncthings hangs (it does not answer http reqs).
      */
     protected void waitForSocketTimeout(int timeoutms) throws Exception{
@@ -168,7 +157,6 @@ public class SyncthingService extends Service {
 
         while (true) try {
             System.err.println("checking");
-            Thread.sleep(10000);
 
             String req =
               "GET / HTTP/1.1\n" +
@@ -184,52 +172,58 @@ public class SyncthingService extends Service {
             s.close();
         } catch(java.net.SocketTimeoutException e) {
             e.printStackTrace();
-            s.close();
             return;
         } catch(java.net.ConnectException e) {
             // e.g. connection refused during startup
             e.printStackTrace();
+        } finally {
+            Thread.sleep(timeoutms);
         }
+    }
+
+    protected LinkedList<Integer> getSyncthingPids()
+    throws Exception {
+      //
+      // find all running processes of libsyncthing.so,
+      // through calling ps and parsing them for the PID
+      //
+      LinkedList<Integer> pids = new LinkedList<Integer>();
+      Process p = new ProcessBuilder()
+        .command("/system/bin/ps")
+        .directory(new File("/"))
+        .start();
+      System.err.println("start ps");
+      BufferedReader r = new BufferedReader(
+                         new InputStreamReader(
+                           p.getInputStream()));
+      System.err.println("got ps");
+
+      //
+      // ignore the header (first line), and then search for the PIDs
+      //
+      String line = r.readLine();
+      while ( (line = r.readLine()) != null ) {
+
+        if (!line.contains("syncthing"))
+          continue;
+
+        //
+        // this is hard-coded to the output of the "ps" command
+        // on the specific android version, not very portable (XXX)
+        //
+        String[] tokens = line.split(" +");
+        pids.add( Integer.parseInt(tokens[1]) );
+      }
+
+      r.close();
+      return pids;
     }
 
     protected void stopSyncthing() {
       System.err.println("stop");
 
       try {
-          //
-          // find all running processes of libsyncthing.so,
-          // through calling ps and parsing them for the PID
-          //
-          LinkedList<Integer> pids = new LinkedList<Integer>();
-          Process p = new ProcessBuilder()
-            .command("/system/bin/ps")
-            .directory(new File("/"))
-            .start();
-          System.err.println("start ps");
-          BufferedReader r = new BufferedReader(
-                             new InputStreamReader(
-                               p.getInputStream()));
-          System.err.println("got ps");
-
-          //
-          // ignore the header (first line), and then search for the PIDs
-          //
-          String line = r.readLine();
-          while ( (line = r.readLine()) != null ) {
-
-            if (!line.contains("syncthing"))
-              continue;
-
-            //
-            // this is hard-coded to the output of the "ps" command
-            // on the specific android version, not very portable (XXX)
-            //
-            String[] tokens = line.split(" +");
-            pids.add( Integer.parseInt(tokens[1]) );
-          }
-
-          r.close();
-
+          LinkedList<Integer> pids = getSyncthingPids();
           System.err.println("got " + pids.size() + " pids");
 
           for (Integer pid : pids)
