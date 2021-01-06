@@ -223,8 +223,6 @@ public class MainActivity extends Activity {
                         tv.setText(R.string.wifi_enabled);
                         break;
                     }
-
-                    tv.setText(state.name());
                 }
                 break;
             case WifiManager.WIFI_STATE_ENABLING:
