@@ -1,6 +1,9 @@
 package com.github.ma1co.openmemories.tweak;
 
 import android.os.Process;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Iterator;
 
 public class Shell {
     static {

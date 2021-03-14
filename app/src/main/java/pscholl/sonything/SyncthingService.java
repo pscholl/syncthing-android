@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.DataOutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -76,7 +75,7 @@ public class SyncthingService extends Service {
       //
       try {
         mThread.interrupt();
-        mThread.wait();
+        mThread.join();
       }
       catch( Exception e ) { e.printStackTrace(); }
     }
@@ -96,10 +95,9 @@ public class SyncthingService extends Service {
       // now start the mainthread
       //
       try { mThread.start(); } // ignore if running already
-      catch(Exception e) {
-        e.printStackTrace();
-        publishApiKey(mHome);
-      }
+      catch(Exception e) { e.printStackTrace(); }
+
+      publishApiKey(mHome);
       return START_STICKY;
     }
 
@@ -122,18 +120,23 @@ public class SyncthingService extends Service {
             // detect when syncthing is hanging.
             //
            while( mThreadRunning ) {
+              // kill all running instance
+              stopSyncthing();
+
               mHome = setupHome(getApplicationContext());
               publishApiKey(mHome);
 
               // if it is not there already, start it now
-              if (getSyncthingPids().size() == 0)
+              while (getSyncthingPids().size() == 0) {
                 startSyncthing(mHome);
+                Thread.sleep(10000);
+              }
+
+              while (true)
+                Thread.sleep(100000);
 
               // might still be there from another instance
-              waitForSocketTimeout(60000);
-
-              // kill all running instance
-              stopSyncthing();
+              //waitForSocketTimeout(60000);
            }
 
         } catch (Exception e) {
@@ -176,6 +179,7 @@ public class SyncthingService extends Service {
         } catch(java.net.ConnectException e) {
             // e.g. connection refused during startup
             e.printStackTrace();
+            return;
         } finally {
             Thread.sleep(timeoutms);
         }
@@ -248,14 +252,20 @@ public class SyncthingService extends Service {
       }
     }
 
-    protected Process startSyncthing(File home) throws Exception {
+    protected void startSyncthing(File home) throws Exception {
         //
-        // execute libsyncthing.so in the home-directory
+        // execute libsyncthing.so in the home-directory as root!
+        // root, because otherwise file deletion on the fat32 fs does not work
         //
         System.err.println("start");
 
-        while (true) try {
-          String cmd = new StringBuilder()
+        //
+        // limit to one core, and aggressive garbage collection.
+        // 15% GC from experimentation, lower is too slow, higher
+        // results in a camera reset since no mem is left.
+        //
+        String cmd = new StringBuilder()
+           .append("GOGC=15 GOMAXPROCS=1 ")
            .append( new File(home, "libsyncthing.so").toString() )
            .append(" -no-browser")
            //.append(" -no-restart")
@@ -265,28 +275,8 @@ public class SyncthingService extends Service {
            .append(" 2>&1 >/dev/null")
            .toString();
 
-          ProcessBuilder pb =
-            new ProcessBuilder("sh", "-c", cmd);
-
-          //
-          // limit to one core, and aggressive garbage collection.
-          // 15% GC from experimentation, lower is too slow, higher
-          // results in a camera reset since no mem is left.
-          //
-          pb.environment().put("GOGC", "15");
-          pb.environment().put("GOMAXPROCS", "1");
-
-          System.err.println("executing " + pb.command().toString());
-
-          return pb.start();
-
-        } catch (java.io.IOException e) {
-          //
-          // happens when mounting the fs was not fast enough
-          //
-          e.printStackTrace();
-          Thread.sleep(1000);
-        }
+        System.err.println("executing " + cmd.toString());
+        Shell.exec(cmd.toString());
     }
 
     /**
@@ -399,7 +389,7 @@ public class SyncthingService extends Service {
             e.printStackTrace();
         }
 
-        return null;
+        return "";
     }
 
     private String processXMLforAPIkey(XmlPullParser parser)

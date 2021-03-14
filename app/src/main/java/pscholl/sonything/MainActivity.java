@@ -37,6 +37,14 @@ import android.text.format.Formatter;
 import android.content.SharedPreferences;
 
 /**
+ * TODO permission denied on deletion (via adb), try /sdcard path? If not execute as root
+ *
+ * TODO on restart wifi seems to be disabled
+ *
+ * TODO debug quick scan, seems lika a full rescan is triggered each time
+ *
+ * TODO startup issues still, sometimes syncthing is not started, sometime the update is not started (timing with the API-KEY broadcast?)
+ *
  * TODO show battery stats
  *  https://stackoverflow.com/questions/3291655/get-battery-level-and-state-in-android
  *
@@ -333,7 +341,7 @@ public class MainActivity extends Activity {
                         folder.getString("folder"),
                         folder.getInt("needItems"),
                         folder.getInt("globalItems"),
-                        folder.getDouble("completion")));
+                        folder.getDouble("completion")) + "\n");
 
         TextView tv = (TextView) findViewById(R.id.folders);
         tv.setVisibility(View.VISIBLE);
@@ -357,7 +365,7 @@ public class MainActivity extends Activity {
       while(x.hasNext()) {
           String key = x.next();
           int val = state.getInt(key);
-          sb.append(String.format( "%s - %d%%\n", key, val));
+          sb.append(String.format( "%s - %d%% %n", key, val));
       }
 
       tv.setText(sb.toString());
